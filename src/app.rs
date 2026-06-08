@@ -1,5 +1,6 @@
 use crate::cli::args;
 use crate::matcher::search;
+use crate::printer::output;
 
 pub fn run() -> Result<(), String> {
     // conduct arguments
@@ -12,14 +13,7 @@ pub fn run() -> Result<(), String> {
     let search_result = search(cli_args, read_result)?;
 
     // result output
-    if search_result.is_empty() {
-        return Err("not find content".to_string());
-    }
-
-    print!("local in: {} \ncontent is:\n", search_result[0].path);
-    for result in &search_result {
-        println!("   {:<8} | {}", result.line_no, result.content)
-    }
+    let _ = output(search_result);
 
     Ok(())
 }
