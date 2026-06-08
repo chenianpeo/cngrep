@@ -1,9 +1,17 @@
+use std::fs::File;
+use std::io::BufReader;
+
 #[derive(Debug)]
 pub struct CliArgs {
     pub query: String,
     pub path: String,
 }
 
+#[derive(Debug)]
+pub struct ReadResult {
+    pub path: String,
+    pub file: BufReader<File>,
+}
 #[derive(Debug)]
 pub struct MatchResult {
     pub path: String,
