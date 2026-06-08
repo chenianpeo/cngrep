@@ -1,6 +1,5 @@
 use crate::cli::args;
-use crate::config::MatchResult;
-use std::io::BufRead;
+use crate::matcher::search;
 
 pub fn run() -> Result<(), String> {
     // conduct arguments
@@ -10,20 +9,7 @@ pub fn run() -> Result<(), String> {
     let read_result = cli_args.read()?;
 
     // content search
-    let mut search_result: Vec<MatchResult> = Vec::new();
-
-    for (line_no, line) in read_result.file.lines().enumerate() {
-        let line = line.unwrap();
-        let line_no = line_no + 1;
-
-        if line.contains(&cli_args.query.to_string()) {
-            search_result.push(MatchResult {
-                line_no,
-                content: line,
-                path: read_result.path.to_string(),
-            });
-        }
-    }
+    let search_result = search(cli_args, read_result)?;
 
     // result output
     if search_result.is_empty() {
