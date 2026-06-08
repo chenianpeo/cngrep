@@ -1,5 +1,8 @@
 use crate::config::{CliArgs, MatchResult};
-use std::{fs::{self, File}, io::{BufRead, BufReader}};
+use std::{
+    fs::{self, File},
+    io::{BufRead, BufReader},
+};
 
 pub fn run() -> Result<(), String> {
     // conduct arguments
@@ -29,22 +32,22 @@ pub fn run() -> Result<(), String> {
         let line_no = line_no + 1;
 
         if line.contains(&cli_args.query.to_string()) {
-            search_result.push(MatchResult { line_no, content: line, path: file_path.to_string() });
+            search_result.push(MatchResult {
+                line_no,
+                content: line,
+                path: file_path.to_string(),
+            });
         }
     }
 
     // result output
-    if search_result.len() == 0 {
+    if search_result.is_empty() {
         return Err("not find content".to_string());
     }
 
-    print!("local in: {} \ncontent is:\n", &search_result[0].path);
-    for result in&search_result {
-        println!(
-            "   {:<8} | {}",
-            result.line_no,
-            result.content
-        )
+    print!("local in: {} \ncontent is:\n", search_result[0].path);
+    for result in &search_result {
+        println!("   {:<8} | {}", result.line_no, result.content)
     }
 
     Ok(())
