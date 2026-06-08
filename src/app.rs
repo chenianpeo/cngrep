@@ -1,4 +1,5 @@
-use crate::config::{CliArgs, MatchResult};
+use crate::cli::args;
+use crate::config::MatchResult;
 use std::{
     fs::{self, File},
     io::{BufRead, BufReader},
@@ -6,16 +7,7 @@ use std::{
 
 pub fn run() -> Result<(), String> {
     // conduct arguments
-    let args: Vec<String> = std::env::args().collect();
-
-    if args.len() != 3 {
-        return Err("arguments length not enough".to_string());
-    }
-
-    let cli_args = CliArgs {
-        query: args[1].clone(),
-        path: args[2].clone(),
-    };
+    let cli_args = args()?;
 
     // read file and content
     let open_file = File::open(&cli_args.path).unwrap();
