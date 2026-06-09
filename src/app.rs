@@ -1,8 +1,9 @@
 use crate::cli::args;
+use crate::error::CnError;
 use crate::matcher::search;
 use crate::printer::output;
 
-pub fn run() -> Result<(), String> {
+pub fn run() -> Result<(), CnError> {
     // conduct arguments
     let cli_args = args()?;
 

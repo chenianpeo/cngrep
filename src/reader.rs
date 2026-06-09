@@ -2,9 +2,10 @@ use std::fs::{self, File};
 use std::io::BufReader;
 
 use crate::config::{CliArgs, ReadResult};
+use crate::error::CnError;
 
 impl CliArgs {
-    pub fn read(&self) -> Result<ReadResult, String> {
+    pub fn read(&self) -> Result<ReadResult, CnError> {
         let open_file = File::open(&self.path).unwrap();
         let file_content = BufReader::new(open_file);
 

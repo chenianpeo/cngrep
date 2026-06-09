@@ -1,10 +1,10 @@
-use crate::config::CliArgs;
+use crate::{config::CliArgs, error::CnError};
 
-pub fn args() -> Result<CliArgs, String> {
+pub fn args() -> Result<CliArgs, CnError> {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() != 3 {
-        return Err("arguments length not enough".to_string());
+        return Err(CnError::Parse("arguments length not enough".to_string()));
     }
 
     let cli_args = CliArgs {
