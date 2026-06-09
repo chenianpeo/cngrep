@@ -30,7 +30,7 @@ impl From<io::Error> for CnError {
 #[cfg(test)]
 mod error_test {
     use super::*;
-    use std::{error::Error, io};
+    use std::io;
 
     #[test]
     fn test_io_error() {
