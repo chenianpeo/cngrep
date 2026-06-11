@@ -6,7 +6,7 @@ use std::io;
 pub enum CnError {
     Io(io::Error),
     Parse(String),
-    InvalidInput(String),
+    Custom(String),
 }
 
 impl fmt::Display for CnError {
@@ -14,7 +14,7 @@ impl fmt::Display for CnError {
         match self {
             CnError::Io(e) => write!(f, "io error: {}", e),
             CnError::Parse(msg) => write!(f, "parse error: {}", msg),
-            CnError::InvalidInput(msg) => write!(f, "invalid input: {}", msg),
+            CnError::Custom(msg) => write!(f, "custom return: {}", msg),
         }
     }
 }
@@ -46,7 +46,7 @@ mod error_test {
 
     #[test]
     fn test_input_error() {
-        let err = CnError::InvalidInput("query content only support word".to_string());
+        let err = CnError::Custom("query content only support word".to_string());
         assert_eq!(
             err.to_string(),
             "invalid input: query content only support word"
