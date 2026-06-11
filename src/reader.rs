@@ -12,7 +12,7 @@ impl CliArgs {
         let absolute_path = fs::canonicalize(&self.path)?;
         let file_path = absolute_path
             .to_str()
-            .ok_or(CnError::Io(Error::new(std::io::ErrorKind::Other, "None")))?
+            .ok_or(Error::other("None"))?
             .to_string();
 
         Ok(ReadResult {
