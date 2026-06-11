@@ -1,8 +1,8 @@
-use crate::config::MatchResult;
+use crate::{config::MatchResult, error::CnError};
 
-pub fn output(result: Vec<MatchResult>) -> Result<(), String> {
+pub fn output(result: Vec<MatchResult>) -> Result<(), CnError> {
     if result.is_empty() {
-        return Err("not found content".to_string());
+        return Err(CnError::Custom("not found content".to_string()));
     }
 
     print!("local in: {} \ncontent is:\n", result[0].path);
