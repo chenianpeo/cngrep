@@ -33,6 +33,10 @@ pub enum Error {
         pattern: String,
         reason: String,
     },
+    InvalidArgument {
+        r#type: String,
+        reason: String,
+    },
     Io {
         source: std::io::Error,
         context: Option<String>,
@@ -47,6 +51,12 @@ impl fmt::Display for Error {
         match self {
             Error::InvalidPattern { pattern, reason } => {
                 write!(f, "invalid pattern `{}`: {}", pattern, reason)
+            }
+            Error::InvalidArgument {
+                r#type: name,
+                reason,
+            } => {
+                write!(f, "invalid argument {}: {}", name, reason)
             }
             Error::Io { source, context } => {
                 if let Some(ctx) = context {
@@ -76,6 +86,18 @@ mod test_error {
         assert_eq!(
             format!("{}", err),
             "invalid pattern `[a-z`: missing closing bracket"
+        );
+    }
+
+    #[test]
+    fn test_invalid_argument() {
+        let err = Error::InvalidArgument {
+            r#type: "length".to_string(),
+            reason: "args length isn't 2".to_string(),
+        };
+        assert_eq!(
+            format!("{}", err),
+            "invalid argument length: args length isn't 2"
         );
     }
 
