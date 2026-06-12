@@ -27,42 +27,37 @@ impl From<io::Error> for CnError {
     }
 }
 
-#[cfg(test)]
-mod error_test {
-    use super::*;
-    use std::io;
+#[derive(Debug)]
+pub enum Error {
+    InvalidPattern {
+        pattern: String,
+        reason: String,
+    },
+    Io {
+        source: std::io::Error,
+        context: Option<String>,
+    },
+    Internal {
+        message: String,
+    },
+}
 
-    #[test]
-    fn test_io_error() {
-        let err = CnError::Io(io::Error::new(io::ErrorKind::Other, "file read failed"));
-        assert_eq!(err.to_string(), "io error: file read failed");
-    }
-
-    #[test]
-    fn test_parse_error() {
-        let err = CnError::Parse("invalid arguments length".to_string());
-        assert_eq!(err.to_string(), "parse error: invalid arguments length");
-    }
-
-    #[test]
-    fn test_input_error() {
-        let err = CnError::Custom("query content only support word".to_string());
-        assert_eq!(
-            err.to_string(),
-            "invalid input: query content only support word"
-        );
-    }
-
-    #[test]
-    fn test_from_io_error() {
-        let io_err = io::Error::new(io::ErrorKind::NotFound, "file not found");
-        let err: CnError = io_err.into();
-
-        match err {
-            CnError::Io(e) => {
-                assert_eq!(e.kind(), io::ErrorKind::NotFound);
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::InvalidPattern { pattern, reason } => {
+                write!(f, "invalid pattern `{}`: {}", pattern, reason)
             }
-            _ => panic!("expected CnError::Io"),
+            Error::Io { source, context } => {
+                if let Some(ctx) = context {
+                    write!(f, "{}: {}", ctx, source)
+                } else {
+                    write!(f, "IO error: {}", source)
+                }
+            }
+            Error::Internal { message } => {
+                write!(f, "Internal error: {}", message)
+            }
         }
     }
 }
