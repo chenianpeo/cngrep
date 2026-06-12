@@ -1,14 +1,12 @@
-use crate::{config::MatchResult, error::CnError};
+use crate::config::MatchResult;
 
-pub fn output(result: Vec<MatchResult>) -> Result<(), CnError> {
+pub fn output(result: Vec<MatchResult>) {
     if result.is_empty() {
-        return Err(CnError::Custom("not found content".to_string()));
+        println!("not have content");
+    } else {
+        print!("local in: {} \ncontent is:\n", result[0].path);
+        for r in &result {
+            println!("  {:<8} | {}", r.line_no, r.content)
+        }
     }
-
-    print!("local in: {} \ncontent is:\n", result[0].path);
-    for r in &result {
-        println!("  {:<8} | {}", r.line_no, r.content)
-    }
-
-    Ok(())
 }
