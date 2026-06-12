@@ -14,7 +14,7 @@ pub fn run() -> Result<(), CnError> {
     let search_result = search(cli_args, read_result)?;
 
     // result output
-    let _ = output(search_result)?;
+    output(search_result)?;
 
     Ok(())
 }
