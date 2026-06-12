@@ -1,10 +1,10 @@
 use crate::{
     config::{CliArgs, MatchResult, ReadResult},
-    error::CnError,
+    error::Error,
 };
 use std::io::BufRead;
 
-pub fn search(args: CliArgs, read: ReadResult) -> Result<Vec<MatchResult>, CnError> {
+pub fn search(args: CliArgs, read: ReadResult) -> Result<Vec<MatchResult>, Error> {
     let mut search_result: Vec<MatchResult> = Vec::new();
 
     for (line_no, line) in read.file.lines().enumerate() {
