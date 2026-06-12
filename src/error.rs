@@ -72,29 +72,29 @@ mod test_error {
             pattern: "[a-z".to_string(),
             reason: "missing closing bracket".to_string(),
         };
-        match err {
-            Error::InvalidPattern { pattern, reason } => {
-                assert_eq!(pattern, "[a-z".to_string());
-                assert_eq!(reason, "missing closing bracket".to_string())
-            }
-            _ => panic!("expected InvalidPattern error"),
-        }
+
+        assert_eq!(
+            format!("{}", err),
+            "invalid pattern `[a-z`: missing closing bracket"
+        );
     }
 
     #[test]
     fn test_io() {
-        let err = Error::Io {
+        let err_with_context = Error::Io {
             source: std::io::Error::new(std::io::ErrorKind::NotFound, "file not found"),
             context: Some("read file report error".to_string()),
         };
-        match err {
-            Error::Io { source, context } => {
-                assert_eq!(source.kind(), std::io::ErrorKind::NotFound);
-                assert_eq!(source.to_string(), "file not found");
-                assert_eq!(context, Some("read file report error".to_string()));
-            }
-            _ => panic!("expected Io error"),
-        }
+        assert_eq!(
+            format!("{}", err_with_context),
+            "read file report error: file not found"
+        );
+
+        let err_without_context = Error::Io {
+            source: std::io::Error::new(std::io::ErrorKind::Deadlock, "dead lock"),
+            context: None,
+        };
+        assert_eq!(format!("{}", err_without_context), "IO error: dead lock");
     }
 
     #[test]
@@ -102,11 +102,6 @@ mod test_error {
         let err = Error::Internal {
             message: "unexpected empty state".to_string(),
         };
-        match err {
-            Error::Internal { message } => {
-                assert_eq!(message, "unexpected empty state");
-            }
-            _ => panic!("expected Internal error"),
-        }
+        assert_eq!(format!("{}", err), "Internal error: unexpected empty state");
     }
 }
