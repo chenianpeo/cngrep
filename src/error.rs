@@ -61,3 +61,52 @@ impl fmt::Display for Error {
         }
     }
 }
+
+#[cfg(test)]
+mod test_error {
+    use super::*;
+
+    #[test]
+    fn test_invalid_pattern() {
+        let err = Error::InvalidPattern {
+            pattern: "[a-z".to_string(),
+            reason: "missing closing bracket".to_string(),
+        };
+        match err {
+            Error::InvalidPattern { pattern, reason } => {
+                assert_eq!(pattern, "[a-z".to_string());
+                assert_eq!(reason, "missing closing bracket".to_string())
+            }
+            _ => panic!("expected InvalidPattern error"),
+        }
+    }
+
+    #[test]
+    fn test_io() {
+        let err = Error::Io {
+            source: std::io::Error::new(std::io::ErrorKind::NotFound, "file not found"),
+            context: Some("read file report error".to_string()),
+        };
+        match err {
+            Error::Io { source, context } => {
+                assert_eq!(source.kind(), std::io::ErrorKind::NotFound);
+                assert_eq!(source.to_string(), "file not found");
+                assert_eq!(context, Some("read file report error".to_string()));
+            }
+            _ => panic!("expected Io error"),
+        }
+    }
+
+    #[test]
+    fn test_internal() {
+        let err = Error::Internal {
+            message: "unexpected empty state".to_string(),
+        };
+        match err {
+            Error::Internal { message } => {
+                assert_eq!(message, "unexpected empty state");
+            }
+            _ => panic!("expected Internal error"),
+        }
+    }
+}
