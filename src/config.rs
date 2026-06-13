@@ -5,6 +5,13 @@ use std::io::BufReader;
 pub struct CliArgs {
     pub query: String,
     pub file: String,
+    pub mode: Mode,
+}
+
+#[derive(Debug)]
+pub enum Mode {
+    Normal,
+    CountOnly
 }
 
 #[derive(Debug)]
