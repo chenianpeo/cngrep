@@ -1,3 +1,0 @@
-cngrep
-bat
-ripgrep
