@@ -12,7 +12,7 @@ pub fn args() -> Result<CliArgs, Error> {
 
     let cli_args = CliArgs {
         query: args[1].clone(),
-        path: args[2].clone(),
+        file: args[2].clone(),
     };
 
     Ok(cli_args)

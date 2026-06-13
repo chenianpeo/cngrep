@@ -4,7 +4,7 @@ use std::io::BufReader;
 #[derive(Debug)]
 pub struct CliArgs {
     pub query: String,
-    pub path: String,
+    pub file: String,
 }
 
 #[derive(Debug)]
