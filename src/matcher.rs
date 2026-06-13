@@ -8,7 +8,7 @@ pub fn search(args: CliArgs, read: ReadResult) -> Result<Vec<MatchResult>, Error
     let mut search_result: Vec<MatchResult> = Vec::new();
 
     for (line_no, line) in read.file.lines().enumerate() {
-        let line = line.unwrap();
+        let line = line?;
         let line_no = line_no + 1;
 
         if line.contains(&args.query.to_string()) {
