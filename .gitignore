@@ -1,4 +1,8 @@
 /target
 
-bigfile.txt
+bigfile_20m.txt
+bigfile_40m.txt
+bigfile_80m.txt
+
+content.txt
 empty.txt
