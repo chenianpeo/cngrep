@@ -17,7 +17,7 @@ cargo run -- grep content.txt
 # 2. bigfile search
 echo
 echo "[3] big file search - bigfile.txt"
-cargo run -- rust bigfile.txt
+cargo run -- rust bigfile_40m.txt
 
 # 3. empty file
 echo
