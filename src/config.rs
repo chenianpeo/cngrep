@@ -11,7 +11,7 @@ pub struct CliArgs {
 #[derive(Debug)]
 pub enum Mode {
     Normal,
-    CountOnly
+    CountOnly,
 }
 
 #[derive(Debug)]
