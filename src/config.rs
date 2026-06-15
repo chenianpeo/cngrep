@@ -17,6 +17,7 @@ pub struct Cli {
     pub count: bool,
 }
 
+#[derive(Debug)]
 pub struct Args {
     pub query: String,
     pub input_source: InputSource,
