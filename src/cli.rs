@@ -1,5 +1,7 @@
+use std::path::PathBuf;
+
 use crate::{
-    config::{self, CliArgs},
+    config::{self, Cli, CliArgs},
     error::Error,
 };
 
@@ -31,6 +33,22 @@ pub fn args() -> Result<CliArgs, Error> {
         _ => Err(Error::InvalidArgument {
             r#type: "length".to_string(),
             reason: "args length isn't 2".to_string(),
+        }),
+    }
+}
+
+pub fn _args() -> Result<Cli, crate::error::Error> {
+    let args: Vec<String> = std::env::args().collect();
+
+    match args.len() {
+        3 => Ok(Cli {
+            query: args[1].clone(),
+            file: Some(PathBuf::from(&args[2])),
+            count: false,
+        }),
+        _ => Err(Error::InvalidArgument {
+            r#type: "arguments".to_string(),
+            reason: "failed command".to_string(),
         }),
     }
 }
