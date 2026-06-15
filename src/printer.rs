@@ -4,9 +4,11 @@ pub fn output(result: Vec<MatchResult>) {
     if result.is_empty() {
         println!("not found content");
     } else {
-        print!("local in: {} \ncontent is:\n", result[0].path);
+        let mut return_string = format!("local in: {} \ncontent is:\n", result[0].path);
         for r in &result {
-            println!("  {:<8} | {}", r.line_no, r.content)
+            return_string = format!("{}\n  {:<8} | {}", return_string, r.line_no, r.content);
         }
+
+        println!("{return_string}");
     }
 }
