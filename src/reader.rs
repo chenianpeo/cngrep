@@ -1,5 +1,6 @@
 use std::fs::{self, File};
 use std::io::{self, BufReader};
+use std::path::PathBuf;
 
 use crate::config::{CliArgs, ReadResult};
 use crate::error::Error;
@@ -23,5 +24,21 @@ impl CliArgs {
             path: file_path,
             file: file_content,
         })
+    }
+}
+
+pub trait Reader {
+    fn read(&self) -> Result<BufReader<File>, crate::error::Error>;
+}
+
+pub struct FileReader {
+    pub path: PathBuf,
+}
+
+impl Reader for FileReader {
+    fn read(&self) -> Result<BufReader<File>, crate::error::Error> {
+        let open_file = File::open(&self.path)?;
+        let file_content = BufReader::new(open_file);
+        Ok(file_content)
     }
 }
