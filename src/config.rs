@@ -1,13 +1,4 @@
-use std::fs::File;
-use std::io::BufReader;
 use std::path::PathBuf;
-
-#[derive(Debug)]
-pub struct CliArgs {
-    pub query: String,
-    pub file: String,
-    pub mode: Mode,
-}
 
 #[derive(Debug)]
 pub struct Cli {
@@ -35,12 +26,6 @@ pub enum InputSource {
 pub enum Mode {
     Normal,
     CountOnly,
-}
-
-#[derive(Debug)]
-pub struct ReadResult {
-    pub path: String,
-    pub file: BufReader<File>,
 }
 
 #[derive(Debug)]
