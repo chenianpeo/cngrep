@@ -30,7 +30,6 @@ pub enum Mode {
 
 #[derive(Debug)]
 pub struct MatchResult {
-    pub path: String,
     pub line_no: usize,
     pub content: String,
 }
