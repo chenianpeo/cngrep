@@ -3,5 +3,6 @@ pub mod cli;
 pub mod config;
 pub mod error;
 pub mod matcher;
+pub mod parser;
 pub mod printer;
 pub mod reader;
