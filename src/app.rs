@@ -1,38 +1,37 @@
-use crate::cli::{_args, args};
-use crate::config::{Args, InputSource};
+use crate::cli::args;
+use crate::config::{Args, InputSource, MatchResult};
 use crate::error::Error;
-use crate::matcher::search;
-use crate::printer::output;
 use crate::reader::{FileReader, Reader};
 
 pub fn run() -> Result<(), Error> {
-    // conduct arguments
-    let cli_args = args()?;
+    use std::io::BufRead;
+    let cli = args()?;
 
-    // read file and content
-    let read_result = cli_args.read()?;
-
-    // content search
-    let search_result = search(cli_args, read_result)?;
-
-    // result output
-    output(search_result);
-
-    Ok(())
-}
-
-pub fn _run() -> Result<(), Error> {
-    let cli = _args()?;
     let args = Args::from_cli(cli)?;
 
-    println!("{:#?}", args);
+    match args.input_source {
+        InputSource::File(path) => {
+            let file = FileReader { path };
+            let content = file.read()?;
 
-    let input_source = args.input_source;
-    if let InputSource::File(d) = input_source {
-        let path = d;
-        let file = FileReader { path };
-        let a = file.read()?;
-        println!("{:?}", a);
+            let mut search_result: Vec<MatchResult> = Vec::new();
+
+            for (line_no, line) in content.lines().enumerate() {
+                let line = line?;
+                let line_no = line_no + 1;
+
+                if line.contains(&args.query.to_string()) {
+                    search_result.push(MatchResult {
+                        path: "path".to_string(),
+                        line_no,
+                        content: line,
+                    })
+                }
+            }
+
+            println!("{:#?}", search_result);
+        }
+        _ => println!("undone"),
     }
 
     Ok(())
