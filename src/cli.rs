@@ -5,7 +5,7 @@ use crate::{config::Cli, error::Error};
 pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
     let mut arg = arg;
     arg.remove(0);
-    
+
     match arg.len() {
         1 => Ok(Cli {
             query: arg[0].clone(),
@@ -105,10 +105,9 @@ fn determine_mode(cli: &Cli) -> Result<Mode, Error> {
 mod cli_test {
     use super::*;
 
-
     #[test]
     fn test_1_args() {
-        let arg: Vec<String> = vec!["q".to_string()];
+        let arg: Vec<String> = vec!["da".to_string(), "q".to_string()];
         let cli = args(arg).unwrap();
         assert_eq!(cli.query, "q".to_string());
         assert_eq!(cli.file, None);

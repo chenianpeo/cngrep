@@ -40,14 +40,10 @@ impl Match for FileMatch {
         for line in (&mut self.file).lines() {
             let line = line.unwrap();
             if line.contains(&self.query) {
-                count = count +1;
+                count += 1;
             }
         }
 
         Ok(count)
     }
-}
-
-pub trait SearchMode {
-    fn search_mode() {}
 }
