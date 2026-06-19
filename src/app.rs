@@ -1,35 +1,47 @@
 use crate::cli::args;
-use crate::config::{Args, InputSource};
+use crate::config::Args;
+use crate::config::Mode;
 use crate::error::Error;
-use crate::matcher::{FileMatch, Match};
-use crate::reader::{FileReader, Reader};
 
 pub fn run() -> Result<(), Error> {
-    let cli = args()?;
+    let arg: Vec<String> = std::env::args().collect();
+    let cli = args(arg)?;
+    println!("{:?}", cli);
 
     let args = Args::from_cli(cli)?;
 
-    match args.input_source {
-        InputSource::File(path) => {
-            let file = FileReader { path };
-
-            let content = file.read()?;
-
-            let mut file_match = FileMatch {
-                query: args.query,
-                file: content,
-            };
-
-            let search_result = file_match.search()?;
-            println!("{:#?}", search_result);
+    match args.mode {
+        Mode::Normal => {
+            println!("running by normal mode");
+            
         }
-        InputSource::Stdin => {
-            println!("stdin");
+
+        Mode::CountOnly => {
+            println!("running by count only mode");
         }
-        InputSource::CurrentDir => {
-            println!("current dir")
-        }
-    };
+    }
+
+    // match args.input_source {
+    //     InputSource::File(path) => {
+    //         let file = FileReader { path };
+
+    //         let content = file.read()?;
+
+    //         let mut file_match = FileMatch {
+    //             query: args.query,
+    //             file: content,
+    //         };
+
+    //         let search_result = file_match.search()?;
+    //         println!("{:#?}", search_result);
+    //     }
+    //     InputSource::Stdin => {
+    //         println!("stdin");
+    //     }
+    //     InputSource::CurrentDir => {
+    //         println!("current dir")
+    //     }
+    // };
 
     Ok(())
 }
