@@ -1,10 +1,18 @@
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
-use std::path::PathBuf;
-
 use crate::cli::args;
 use crate::config::{Args, InputSource, Mode};
 use crate::error::Error;
+use std::path::PathBuf;
+
+use crate::reader::read_file;
+use crate::reader::read_stdin;
+
+use crate::matcher::match_file_count;
+use crate::matcher::match_file_normal;
+use crate::matcher::match_stdin_count;
+use crate::matcher::match_stdin_normal;
+
+use crate::printer::print_file_normal;
+use crate::printer::print_stdin;
 
 pub fn run() -> Result<(), Error> {
     let arg: Vec<String> = std::env::args().collect();
@@ -14,33 +22,14 @@ pub fn run() -> Result<(), Error> {
 
     match (args.mode, args.input_source) {
         (Mode::Normal, InputSource::File(path)) => {
-            // read file
             let normal_file = NormalFile {
                 query: args.query,
                 file: path,
             };
 
-            let file = File::open(normal_file.file)?;
-            let file_content = BufReader::new(file);
-
-            // content match
-            let mut file_match: Vec<FileMatch> = Vec::new();
-            for (line_no, line) in file_content.lines().enumerate() {
-                let line = line.unwrap();
-                let line_no = line_no + 1;
-
-                if line.contains(&normal_file.query) {
-                    file_match.push(FileMatch {
-                        line_no,
-                        content: line,
-                    });
-                }
-            }
-
-            // print search result
-            for line in file_match {
-                println!("{}:{}", line.line_no, line.content);
-            }
+            let file_content = read_file(normal_file.file)?;
+            let file_match = match_file_normal(file_content, normal_file.query)?;
+            let _ = print_file_normal(file_match);
         }
         (Mode::CountOnly, InputSource::File(path)) => {
             let normal_file = NormalFile {
@@ -48,51 +37,18 @@ pub fn run() -> Result<(), Error> {
                 file: path,
             };
 
-            let file = File::open(normal_file.file)?;
-            let file_content = BufReader::new(file);
-
-            let mut count: usize = 0;
-            for line in file_content.lines() {
-                let line = line?;
-                if line.contains(&normal_file.query) {
-                    count += 1;
-                }
-            }
+            let file = read_file(normal_file.file)?;
+            let count = match_file_count(file, normal_file.query)?;
             println!("{}", count);
         }
         (Mode::Normal, InputSource::Stdin) => {
-            let buf = io::stdin();
-            let handle = buf.lock();
-
-            let mut match_result: Vec<String> = Vec::new();
-
-            for line in handle.lines() {
-                let line = line?;
-
-                if line.contains(&args.query) {
-                    match_result.push(line);
-                }
-            }
-
-            for line in match_result {
-                println!("{}", line);
-            }
+            let handle = read_stdin()?;
+            let match_result = match_stdin_normal(handle, args.query)?;
+            let _ = print_stdin(match_result);
         }
         (Mode::CountOnly, InputSource::Stdin) => {
-            let buf = io::stdin();
-            let handle = buf.lock();
-
-            // let mut match_result: Vec<String> = Vec::new();
-            let mut count: usize = 0;
-
-            for line in handle.lines() {
-                let line = line?;
-
-                if line.contains(&args.query) {
-                    count += 1;
-                }
-            }
-
+            let handle = read_stdin()?;
+            let count = match_stdin_count(handle, args.query)?;
             println!("{}", count);
         }
         _ => {}
@@ -107,6 +63,6 @@ pub struct NormalFile {
 
 #[derive(Debug)]
 pub struct FileMatch {
-    line_no: usize,
-    content: String,
+    pub line_no: usize,
+    pub content: String,
 }
