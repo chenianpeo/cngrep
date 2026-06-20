@@ -29,7 +29,7 @@ pub enum Mode {
 }
 
 #[derive(Debug)]
-pub struct MatchResult {
+pub struct FileMatch {
     pub line_no: usize,
     pub content: String,
 }
