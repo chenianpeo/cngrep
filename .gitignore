@@ -8,4 +8,5 @@ content.txt
 empty.txt
 
 perf.data
-chart.dio
+perf.data.old
+flamegraph.svg

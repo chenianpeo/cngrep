@@ -1,7 +1,7 @@
 use crate::cli::args;
+use crate::config::NormalFile;
 use crate::config::{Args, InputSource, Mode};
 use crate::error::Error;
-use std::path::PathBuf;
 
 use crate::reader::read_file;
 use crate::reader::read_stdin;
@@ -14,12 +14,14 @@ use crate::matcher::match_stdin_normal;
 use crate::printer::print_file_normal;
 use crate::printer::print_stdin;
 
+// Software Operation
 pub fn run() -> Result<(), Error> {
+    // arguments input and conduct
     let arg: Vec<String> = std::env::args().collect();
     let cli = args(arg)?;
-
     let args = Args::from_cli(cli)?;
 
+    // match input source and mode
     match (args.mode, args.input_source) {
         (Mode::Normal, InputSource::File(path)) => {
             let normal_file = NormalFile {
@@ -54,15 +56,4 @@ pub fn run() -> Result<(), Error> {
         _ => {}
     }
     Ok(())
-}
-
-pub struct NormalFile {
-    query: String,
-    file: PathBuf,
-}
-
-#[derive(Debug)]
-pub struct FileMatch {
-    pub line_no: usize,
-    pub content: String,
 }
