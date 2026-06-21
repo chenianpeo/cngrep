@@ -33,3 +33,8 @@ pub struct FileMatch {
     pub line_no: usize,
     pub content: String,
 }
+
+pub struct NormalFile {
+    pub query: String,
+    pub file: PathBuf,
+}
