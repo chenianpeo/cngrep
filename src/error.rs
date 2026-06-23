@@ -1,3 +1,21 @@
+/*
+RUST USE EXPLICIT ERROR HANDING
+
+TYPE: Recoverable Error: use `Result<T, E>`, Unrecoverable Error:
+use `panic!()`
+
+Match Total Dispose, Specificity: explicit style, no hidden control
+flow, compiler make sure dispose all case
+
+Error Handle be decided with caller instead of callee be decided 
+with callee
+
+Error Propagation: error handle should be dispose by the upper 
+superstratum
+
+Make invalid states beyond expression
+*/
+
 use std::fmt;
 use std::io;
 
