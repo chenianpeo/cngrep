@@ -1,22 +1,41 @@
 use crate::config::FileMatch;
-use crate::error::Error;
 
-pub fn print_file_normal(result: Vec<FileMatch>) -> Result<(), Error> {
-    if result.is_empty() {
-        println!("Not Found");
-    }
-    for line in result {
-        println!("{}:{}", line.line_no, line.content);
-    }
-    Ok(())
+pub trait Print {
+    fn print(&self);
 }
 
-pub fn print_stdin(result: Vec<String>) -> Result<(), Error> {
-    if result.is_empty() {
-        println!("Not Found");
+#[derive(Debug)]
+pub struct FileMatchResult {
+    pub content: Vec<FileMatch>,
+}
+
+#[derive(Debug)]
+pub struct StdinMatchResult {
+    pub content: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct DirMatchResult {}
+
+// pub struct FileMatchResult {}
+impl Print for FileMatchResult {
+    fn print(&self) {
+        for line in &self.content {
+            println!("{}: {}", line.line_no, line.content);
+        }
     }
-    for line in result {
-        println!("{}", line);
+}
+
+impl Print for StdinMatchResult {
+    fn print(&self) {
+        for line in &self.content {
+            println!("{}", line);
+        }
     }
-    Ok(())
+}
+
+impl Print for DirMatchResult {
+    fn print(&self) {
+        println!("{:?}", self);
+    }
 }

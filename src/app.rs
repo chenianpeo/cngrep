@@ -1,18 +1,8 @@
 use crate::cli::args;
-use crate::config::NormalFile;
-use crate::config::{Args, InputSource, Mode};
+use crate::config::{Args, InputSource};
 use crate::error::Error;
 
-use crate::reader::read_file;
-use crate::reader::read_stdin;
-
-use crate::matcher::match_file_count;
-use crate::matcher::match_file_normal;
-use crate::matcher::match_stdin_count;
-use crate::matcher::match_stdin_normal;
-
-use crate::printer::print_file_normal;
-use crate::printer::print_stdin;
+use crate::reader::{Read, ReadDir, ReadFile, ReadStdin};
 
 // Software Operation
 pub fn run() -> Result<(), Error> {
@@ -22,38 +12,23 @@ pub fn run() -> Result<(), Error> {
     let args = Args::from_cli(cli)?;
 
     // match input source and mode
-    match (args.mode, args.input_source) {
-        (Mode::Normal, InputSource::File(path)) => {
-            let normal_file = NormalFile {
-                query: args.query,
-                file: path,
-            };
+    let reader: Box<dyn Read> = match args.input_source {
+        InputSource::File(path) => Box::new(ReadFile {
+            query: args.query,
+            path,
+        }),
+        InputSource::Stdin => Box::new(ReadStdin { query: args.query }),
+        InputSource::CurrentDir => Box::new(ReadDir { query: args.query }),
+    };
 
-            let file_content = read_file(normal_file.file)?;
-            let file_match = match_file_normal(file_content, normal_file.query)?;
-            let _ = print_file_normal(file_match);
-        }
-        (Mode::CountOnly, InputSource::File(path)) => {
-            let normal_file = NormalFile {
-                query: args.query,
-                file: path,
-            };
+    // read content
+    let mut content = reader.read()?;
 
-            let file = read_file(normal_file.file)?;
-            let count = match_file_count(file, normal_file.query)?;
-            println!("{}", count);
-        }
-        (Mode::Normal, InputSource::Stdin) => {
-            let handle = read_stdin()?;
-            let match_result = match_stdin_normal(handle, args.query)?;
-            let _ = print_stdin(match_result);
-        }
-        (Mode::CountOnly, InputSource::Stdin) => {
-            let handle = read_stdin()?;
-            let count = match_stdin_count(handle, args.query)?;
-            println!("{}", count);
-        }
-        _ => {}
-    }
+    // query search
+    let result = content.search()?;
+
+    // result output
+    result.print();
+
     Ok(())
 }
