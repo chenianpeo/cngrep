@@ -1,83 +1,104 @@
-use crate::config::FileMatch;
-use crate::error::Error;
-use crate::printer::DirMatchResult;
-use crate::printer::FileMatchResult;
-use crate::printer::Print;
-use crate::printer::StdinMatchResult;
-use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
-use std::io::Read;
+// use crate::config::Args;
+// use crate::config::InputSource;
+// use crate::error::Error;
+// use crate::printer::DirMatchResult;
+// use crate::printer::FileMatchResult;
+// use crate::printer::Print;
+// use crate::printer::StdinMatchResult;
+// use crate::reader::ReadDir;
+// use crate::reader::ReadFile;
+// use crate::reader::ReadSource;
+// use crate::reader::ReadStdin;
+// use crate::result::FileMatch;
 
-// search content
-// current phase that it's very simple
-// have different approach for each mode or input source
+// use std::fs::File;
+// use std::io::BufRead;
+// use std::io::BufReader;
+// use std::io::Read;
 
-pub trait Match {
-    fn search(&mut self) -> Result<Box<dyn Print>, Error>;
-}
+// // search content
+// // current phase that it's very simple
+// // have different approach for each mode or input source
 
-#[derive(Debug)]
-pub struct ReadFileResult {
-    pub query: String,
-    pub result: BufReader<File>,
-}
+// pub trait Match {
+//     fn search(&mut self) -> Result<Box<dyn Print>, Error>;
+// }
 
-#[derive(Debug)]
-pub struct ReadStdinResult<'a> {
-    pub query: String,
-    pub result: std::io::StdinLock<'a>,
-}
+// #[derive(Debug)]
+// pub struct ReadFileResult {
+//     pub query: String,
+//     pub result: BufReader<File>,
+// }
 
-#[derive(Debug)]
-pub struct ReadDirResult {
-    pub query: String,
-}
+// #[derive(Debug)]
+// pub struct ReadStdinResult<'a> {
+//     pub query: String,
+//     pub result: std::io::StdinLock<'a>,
+// }
 
-impl Match for ReadFileResult {
-    fn search(&mut self) -> Result<Box<dyn Print>, Error> {
-        let mut file_match: Vec<FileMatch> = Vec::new();
-        for (line_no, line) in (self.result).by_ref().lines().enumerate() {
-            let line = line.map_err(|_| Error::Internal {
-                message: "line switch error".to_string(),
-            })?;
-            let line_no = line_no + 1;
-            if line.contains(&self.query) {
-                file_match.push(FileMatch {
-                    line_no,
-                    content: line,
-                });
-            }
-        }
+// #[derive(Debug)]
+// pub struct ReadDirResult {
+//     pub query: String,
+// }
 
-        Ok(Box::new(FileMatchResult {
-            content: file_match,
-        }))
-    }
-}
+// impl Match for ReadFileResult {
+//     fn search(&mut self) -> Result<Box<dyn Print>, Error> {
+//         let mut file_match: Vec<FileMatch> = Vec::new();
+//         for (line_no, line) in (self.result).by_ref().lines().enumerate() {
+//             let line = line.map_err(|_| Error::Internal {
+//                 message: "line switch error".to_string(),
+//             })?;
+//             let line_no = line_no + 1;
+//             if line.contains(&self.query) {
+//                 file_match.push(FileMatch {
+//                     line_no,
+//                     content: line,
+//                 });
+//             }
+//         }
 
-impl<'a> Match for ReadStdinResult<'a> {
-    fn search(&mut self) -> Result<Box<dyn Print>, Error> {
-        let mut match_result: Vec<String> = Vec::new();
+//         Ok(Box::new(FileMatchResult {
+//             content: file_match,
+//         }))
+//     }
+// }
 
-        for line in self.result.by_ref().lines() {
-            let line = line.map_err(|_| Error::Internal {
-                message: "line switch error".to_string(),
-            })?;
+// impl<'a> Match for ReadStdinResult<'a> {
+//     fn search(&mut self) -> Result<Box<dyn Print>, Error> {
+//         let mut match_result: Vec<String> = Vec::new();
 
-            if line.contains(&self.query) {
-                match_result.push(line);
-            }
-        }
-        Ok(Box::new(StdinMatchResult {
-            content: match_result,
-        }))
-    }
-}
+//         for line in self.result.by_ref().lines() {
+//             let line = line.map_err(|_| Error::Internal {
+//                 message: "line switch error".to_string(),
+//             })?;
 
-impl Match for ReadDirResult {
-    fn search(&mut self) -> Result<Box<dyn Print>, Error> {
-        let content = DirMatchResult {};
-        Ok(Box::new(content))
-    }
-}
+//             if line.contains(&self.query) {
+//                 match_result.push(line);
+//             }
+//         }
+//         Ok(Box::new(StdinMatchResult {
+//             content: match_result,
+//         }))
+//     }
+// }
+
+// impl Match for ReadDirResult {
+//     fn search(&mut self) -> Result<Box<dyn Print>, Error> {
+//         let content = DirMatchResult {};
+//         Ok(Box::new(content))
+//     }
+// }
+
+// pub fn mode(arg: Args) -> Result<Box<dyn ReadSource>, Error> {
+//     let reader: Box<dyn ReadSource> = match arg.input_source {
+//         InputSource::File(path) => Box::new(ReadFile {
+//             query: arg.query,
+//             path,
+//         }),
+//         InputSource::Stdin => Box::new(ReadStdin { query: arg.query }),
+//         InputSource::CurrentDir => Box::new(ReadDir { query: arg.query }),
+//     };
+
+//     Ok(reader)
+// }
+

@@ -1,34 +1,28 @@
-use crate::cli::args;
-use crate::config::{Args, InputSource};
+/*
+This module is organize work flow
+ */
+use crate::cli::{InputSource, parse};
 use crate::error::Error;
+use crate::reader::{Read, ReadDir, ReadFile, ReadSource, ReadStdin};
 
-use crate::reader::{Read, ReadDir, ReadFile, ReadStdin};
-
-// Software Operation
 pub fn run() -> Result<(), Error> {
-    // arguments input and conduct
-    let arg: Vec<String> = std::env::args().collect();
-    let cli = args(arg)?;
-    let args = Args::from_cli(cli)?;
+    let args = parse()?;
 
-    // match input source and mode
-    let reader: Box<dyn Read> = match args.input_source {
-        InputSource::File(path) => Box::new(ReadFile {
-            query: args.query,
+    let reader = match args.input_source {
+        InputSource::File(path) => Read::File(ReadFile {
+            query: args.query.clone(),
             path,
         }),
-        InputSource::Stdin => Box::new(ReadStdin { query: args.query }),
-        InputSource::CurrentDir => Box::new(ReadDir { query: args.query }),
+        InputSource::Stdin => Read::Stdin(ReadStdin {
+            query: args.query.clone(),
+        }),
+        InputSource::CurrentDir => Read::Dir(ReadDir {
+            query: args.query.clone(),
+        }),
     };
+    let read_result = reader.read_source()?;
 
-    // read content
-    let mut content = reader.read()?;
-
-    // query search
-    let result = content.search()?;
-
-    // result output
-    result.print();
+    println!("{:?}", read_result);
 
     Ok(())
 }

@@ -29,6 +29,11 @@ echo
 echo "[5] file not exist"
 cargo run -- t not_exist.txt
 
+# 5. current directory
+echo
+echo "[6] current dir test"
+cargo run -- t
+
 echo
 echo "===================="
 echo "Smoke Test Finished Ok"

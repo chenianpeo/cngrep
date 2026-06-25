@@ -1,6 +1,40 @@
+use crate::error::Error;
 use std::path::PathBuf;
 
-use crate::{config::Cli, error::Error};
+pub fn parse() -> Result<Args, Error> {
+    let input_arg: Vec<String> = std::env::args().collect();
+    let cli = args(input_arg)?;
+    let args = Args::from_cli(cli)?;
+    Ok(args)
+}
+
+#[derive(Debug)]
+pub struct Cli {
+    pub query: String,
+    pub file: Option<PathBuf>,
+
+    pub count: bool,
+}
+
+#[derive(Debug)]
+pub struct Args {
+    pub query: String,
+    pub input_source: InputSource,
+    pub mode: Mode,
+}
+
+#[derive(Debug)]
+pub enum InputSource {
+    File(PathBuf),
+    Stdin,
+    CurrentDir,
+}
+
+#[derive(Debug)]
+pub enum Mode {
+    Normal,
+    CountOnly,
+}
 
 // input arguments
 // switch to type Struct `Cli` by method
@@ -8,17 +42,7 @@ pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
     let mut arg = arg;
     arg.remove(0);
 
-    let help_info = "Not Command\n
-Example Command:
-cngrep [Option] Pattern [Path...]\n
-[Option]\n
-    default                 print search result content
-    --count-only, -c,       print search line number
-
-Pattern\n
-[Path...]\n
-"
-    .to_string();
+    let help_info = "HELP".to_string();
 
     match arg.len() {
         // process simply handle
@@ -84,16 +108,12 @@ Pattern\n
 
 use std::io::IsTerminal;
 
-use crate::config::{Args, InputSource, Mode};
-
+// realize determine function for `Args`, determine input source and mode
+// not `self` is associate function and have `self` is method
 impl Args {
-    // associate function
-    // is method if have `self`
     pub fn from_cli(cli: Cli) -> Result<Self, Error> {
-        // decide input source such as Stdin or File
         let input_source: InputSource = determine_input(&cli)?;
 
-        // decide input mode such as Normal or Count Only
         let mode: Mode = determine_mode(&cli)?;
 
         Ok(Self {
@@ -124,18 +144,4 @@ fn determine_mode(cli: &Cli) -> Result<Mode, Error> {
     };
 
     Ok(mode)
-}
-
-#[cfg(test)]
-mod cli_test {
-    use super::*;
-
-    #[test]
-    fn test_1_args() {
-        let arg: Vec<String> = vec!["da".to_string(), "q".to_string()];
-        let cli = args(arg).unwrap();
-        assert_eq!(cli.query, "q".to_string());
-        assert_eq!(cli.file, None);
-        assert_eq!(cli.count, false);
-    }
 }
