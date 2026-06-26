@@ -27,7 +27,7 @@ pub struct Args {
 pub enum InputSource {
     File(PathBuf),
     Stdin,
-    CurrentDir,
+    Dir,
 }
 
 #[derive(Debug)]
@@ -36,8 +36,6 @@ pub enum Mode {
     CountOnly,
 }
 
-// input arguments
-// switch to type Struct `Cli` by method
 pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
     let mut arg = arg;
     arg.remove(0);
@@ -45,8 +43,6 @@ pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
     let help_info = "HELP".to_string();
 
     match arg.len() {
-        // process simply handle
-        // existed pattern: arguments number is 1 to 3
         1 => {
             if arg[0].clone() == "-h" || arg[0].clone() == "--help" {
                 print!("{}", help_info);
@@ -108,8 +104,6 @@ pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
 
 use std::io::IsTerminal;
 
-// realize determine function for `Args`, determine input source and mode
-// not `self` is associate function and have `self` is method
 impl Args {
     pub fn from_cli(cli: Cli) -> Result<Self, Error> {
         let input_source: InputSource = determine_input(&cli)?;
@@ -130,7 +124,7 @@ fn determine_input(cli: &Cli) -> Result<InputSource, Error> {
     } else if !std::io::stdin().is_terminal() {
         InputSource::Stdin
     } else {
-        InputSource::CurrentDir
+        InputSource::Dir
     };
 
     Ok(input_source)

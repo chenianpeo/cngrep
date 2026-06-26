@@ -1,70 +1,34 @@
-// use crate::result::FileMatch;
+use crate::result::MatchResult;
+pub trait Print {
+    fn print(&self) -> Result<(), crate::error::Error>;
+}
 
-// pub trait Print {
-//     fn print(&self);
-// }
+impl Print for MatchResult {
+    fn print(&self) -> Result<(), crate::error::Error> {
+        match self {
+            MatchResult::File(file) => {
+                if file.is_empty() {
+                    println!("Not Found");
+                }
+                for line in file {
+                    println!("{}: {}", line.line_no, line.content);
+                }
+            }
 
-// #[derive(Debug)]
-// pub struct FileMatchResult {
-//     pub content: Vec<FileMatch>,
-// }
+            MatchResult::Stdin(stdin) => {
+                if stdin.is_empty() {
+                    println!("Not Found");
+                }
+                for line in stdin {
+                    println!("{}", line.content);
+                }
+            }
 
-// #[derive(Debug)]
-// pub struct StdinMatchResult {
-//     pub content: Vec<String>,
-// }
+            MatchResult::Dir(dir) => {
+                println!("this is print {:?}", dir);
+            }
+        }
 
-// #[derive(Debug)]
-// pub struct DirMatchResult {}
-
-// impl Print for FileMatchResult {
-//     fn print(&self) {
-//         if self.content.is_empty() {
-//             println!("File: Not Found");
-//         }
-//         for line in &self.content {
-//             println!("{}: {}", line.line_no, line.content);
-//         }
-//     }
-// }
-
-// impl Print for StdinMatchResult {
-//     fn print(&self) {
-//         if self.content.is_empty() {
-//             println!("Stdin: Not Found");
-//         }
-//         for line in &self.content {
-//             println!("{}", line);
-//         }
-//     }
-// }
-
-// impl Print for DirMatchResult {
-//     fn print(&self) {
-//         println!("Dir: Not Found");
-//     }
-// }
-
-// use crate::result::{DirMatch, FileMatch, StdinMatch};
-
-// pub trait Print {
-//     fn new(&self);
-// }
-
-// impl Print for FileMatch {
-//     fn new(&self) {
-//         println!("this is print file");
-//     }
-// }
-
-// impl Print for StdinMatch {
-//     fn new(&self) {
-//         println!("this is print stdin");
-//     }
-// }
-
-// impl Print for DirMatch {
-//     fn new(&self) {
-//         println!("this is print directory");
-//     }
-// }
+        Ok(())
+    }
+}

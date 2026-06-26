@@ -1,28 +1,25 @@
 /*
 This module is organize work flow
  */
-use crate::cli::{InputSource, parse};
+use crate::cli::parse;
 use crate::error::Error;
-use crate::reader::{Read, ReadDir, ReadFile, ReadSource, ReadStdin};
+use crate::matcher::{Match, NeedMatch};
+use crate::printer::Print;
+use crate::reader::ReadSource;
 
 pub fn run() -> Result<(), Error> {
     let args = parse()?;
 
-    let reader = match args.input_source {
-        InputSource::File(path) => Read::File(ReadFile {
-            query: args.query.clone(),
-            path,
-        }),
-        InputSource::Stdin => Read::Stdin(ReadStdin {
-            query: args.query.clone(),
-        }),
-        InputSource::CurrentDir => Read::Dir(ReadDir {
-            query: args.query.clone(),
-        }),
-    };
-    let read_result = reader.read_source()?;
+    let reader = args.read()?;
 
-    println!("{:?}", read_result);
+    let mut need_match = NeedMatch {
+        query: args.query.clone(),
+        content: reader,
+    };
+
+    let match_result = need_match.search()?;
+
+    let _ = match_result.print();
 
     Ok(())
 }

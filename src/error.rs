@@ -1,21 +1,3 @@
-/*
-RUST USE EXPLICIT ERROR HANDING
-
-TYPE: Recoverable Error: use `Result<T, E>`, Unrecoverable Error:
-use `panic!()`
-
-Match Total Dispose, Specificity: explicit style, no hidden control
-flow, compiler make sure dispose all case
-
-Error Handle be decided with caller instead of callee be decided
-with callee
-
-Error Propagation: error handle should be dispose by the upper
-superstratum
-
-Make invalid states beyond expression
-*/
-
 use std::fmt;
 use std::io;
 
@@ -55,12 +37,14 @@ impl fmt::Display for Error {
             Error::InvalidPattern { pattern, reason } => {
                 write!(f, "invalid pattern `{}`: {}", pattern, reason)
             }
+
             Error::InvalidArgument {
                 r#type: name,
                 reason,
             } => {
                 write!(f, "invalid argument {}: {}", name, reason)
             }
+
             Error::Io { source, context } => {
                 if let Some(ctx) = context {
                     write!(f, "{}: {}", ctx, source)
@@ -68,6 +52,7 @@ impl fmt::Display for Error {
                     write!(f, "IO error: {}", source)
                 }
             }
+
             Error::Internal { message } => {
                 write!(f, "Internal error: {}", message)
             }
