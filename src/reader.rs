@@ -4,6 +4,13 @@ include single file, stdin, directory and multiple file
 but current stage only support single file and stdin
 */
 
+/*
+IO module:
+input and scan content
+use stream read, avoid total file upload
+unify iterator interface
+*/
+
 use crate::cli::{Args, InputSource};
 use crate::error::Error;
 use std::fs::File;

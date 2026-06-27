@@ -7,6 +7,27 @@ use crate::matcher::{Match, NeedMatch};
 use crate::printer::{NeedPrint, Print};
 use crate::reader::ReadSource;
 
+/*
+product and feature problem:
+
+# feature incomplete
+only have search, not support ignore case, regex, file name, color,
+context line, recursion directory, etc
+
+# CLI instability stipulated
+arguments parse cannot support system design
+option input format don't fit cli habit
+*/
+
+/*
+architecture layer
+
+# module coupling
+hard to test and extent, error handle is confusion
+
+# error module not unified
+*/
+
 pub fn run() -> Result<(), Error> {
     // arguments input and parse
     let args = parse()?;

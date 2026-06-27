@@ -1,3 +1,8 @@
+/*
+output layer
+include plain render, count render or json render
+*/
+
 use crate::{cli::Mode, result::MatchResult};
 pub trait Print {
     fn print(&self) -> Result<(), crate::error::Error>;

@@ -3,7 +3,19 @@ this module is match search result
 obtain result by match query and content line
 current stage, don't support anything mode
 need optimize from the beginning
- */
+*/
+
+/*
+matching engine
+running pattern match and return result
+pre-compile pattern, avoid repeat build
+abstract engine such as normal or regex
+*/
+
+/*
+Core:
+only responsible calculate, don't include input and output
+*/
 
 use std::io::{BufRead, Read};
 

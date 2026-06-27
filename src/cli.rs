@@ -2,8 +2,14 @@
 this module is conduct parse and obtain Args
 current stage, arguments parse support 1 to 3 and don't support multiple file
 arguments parse is very weak, support sequence rather than semantic input
+*/
 
- */
+/*
+duty:
+defined arguments, check argument validity
+convert cli arguments to parse structure
+unify exit code return
+*/
 
 use crate::error::Error;
 use std::path::PathBuf;
