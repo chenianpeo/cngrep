@@ -1,34 +1,52 @@
-use crate::result::MatchResult;
+use crate::{cli::Mode, result::MatchResult};
 pub trait Print {
     fn print(&self) -> Result<(), crate::error::Error>;
 }
 
-impl Print for MatchResult {
+impl Print for NeedPrint {
     fn print(&self) -> Result<(), crate::error::Error> {
-        match self {
-            MatchResult::File(file) => {
-                if file.is_empty() {
-                    println!("Not Found");
+        if let Mode::CountOnly = self.mode {
+            match &self.result {
+                MatchResult::File(file) => {
+                    println!("{}", file.len());
                 }
-                for line in file {
-                    println!("{}: {}", line.line_no, line.content);
+
+                MatchResult::Stdin(stdin) => {
+                    println!("{}", stdin.len());
+                }
+
+                MatchResult::Dir(dir) => {
+                    println!("{}", dir.len());
                 }
             }
-
-            MatchResult::Stdin(stdin) => {
-                if stdin.is_empty() {
-                    println!("Not Found");
+        } else {
+            match &self.result {
+                MatchResult::File(file) => {
+                    for line in file {
+                        println!("{}: {}", line.line_no, line.content);
+                    }
                 }
-                for line in stdin {
-                    println!("{}", line.content);
-                }
-            }
 
-            MatchResult::Dir(dir) => {
-                println!("this is print {:?}", dir);
+                MatchResult::Stdin(stdin) => {
+                    for line in stdin {
+                        println!("{}", line.content);
+                    }
+                }
+
+                MatchResult::Dir(dir) => {
+                    for line in dir {
+                        println!("{:?}", line.content);
+                    }
+                }
             }
         }
 
         Ok(())
     }
+}
+
+#[derive(Debug)]
+pub struct NeedPrint {
+    pub mode: Mode,
+    pub result: MatchResult,
 }

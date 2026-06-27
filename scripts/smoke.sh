@@ -34,6 +34,11 @@ echo
 echo "[6] current dir test"
 cargo run -- t
 
+# 6. stdin input
+echo
+echo "[7] input zypper help"
+zypper help | cargo run -- help
+
 echo
 echo "===================="
 echo "Smoke Test Finished Ok"

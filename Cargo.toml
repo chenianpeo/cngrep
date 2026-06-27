@@ -1,6 +1,6 @@
 [package]
 name = "cngrep"
-version = "0.1.0"
+version = "0.0.1"
+authors = ["Ian Chen <chenianpeo@163.com>"]
 edition = "2024"
-
-[dependencies]
+rust-version = "1.98"

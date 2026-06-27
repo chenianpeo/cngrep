@@ -1,3 +1,9 @@
+/*
+this module is build match search result
+include file, stdin and directory
+next stage need use function or other method to replace push.
+ */
+
 use std::path::PathBuf;
 
 #[derive(Debug)]

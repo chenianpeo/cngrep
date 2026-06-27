@@ -1,6 +1,14 @@
+/*
+this module is conduct parse and obtain Args
+current stage, arguments parse support 1 to 3 and don't support multiple file
+arguments parse is very weak, support sequence rather than semantic input
+
+ */
+
 use crate::error::Error;
 use std::path::PathBuf;
 
+// parse function
 pub fn parse() -> Result<Args, Error> {
     let input_arg: Vec<String> = std::env::args().collect();
     let cli = args(input_arg)?;
@@ -30,12 +38,14 @@ pub enum InputSource {
     Dir,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Mode {
     Normal,
+    IgnoreCase,
     CountOnly,
 }
 
+// conduct arguments input
 pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
     let mut arg = arg;
     arg.remove(0);
@@ -53,6 +63,7 @@ pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
                 count: false,
             })
         }
+
         2 => {
             if arg[0].clone() == "-c" || arg[0].clone() == "--count-only" {
                 Ok(Cli {
@@ -74,6 +85,7 @@ pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
                 })
             }
         }
+
         3 => {
             if arg[0].clone() == "-c" || arg[0].clone() == "--count-only" {
                 Ok(Cli {
@@ -97,13 +109,14 @@ pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
 
         _ => Err(Error::InvalidArgument {
             r#type: "arguments".to_string(),
-            reason: help_info,
+            reason: "Command\ncngrep [option] <query> <path>".to_string(),
         }),
     }
 }
 
 use std::io::IsTerminal;
 
+// conduct Input source and Input mode.
 impl Args {
     pub fn from_cli(cli: Cli) -> Result<Self, Error> {
         let input_source: InputSource = determine_input(&cli)?;

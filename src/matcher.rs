@@ -1,5 +1,13 @@
+/*
+this module is match search result
+obtain result by match query and content line
+current stage, don't support anything mode
+need optimize from the beginning
+ */
+
 use std::io::{BufRead, Read};
 
+use crate::cli::Mode;
 use crate::error::Error;
 use crate::result::{FileMatch, StdinMatch};
 use crate::{reader::ReadResult, result::MatchResult};
@@ -7,6 +15,7 @@ use crate::{reader::ReadResult, result::MatchResult};
 #[derive(Debug)]
 pub struct NeedMatch<'a> {
     pub query: String,
+    pub mode: Mode,
     pub content: ReadResult<'a>,
 }
 

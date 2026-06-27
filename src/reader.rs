@@ -1,3 +1,9 @@
+/*
+this module is read search content
+include single file, stdin, directory and multiple file
+but current stage only support single file and stdin
+*/
+
 use crate::cli::{Args, InputSource};
 use crate::error::Error;
 use std::fs::File;
