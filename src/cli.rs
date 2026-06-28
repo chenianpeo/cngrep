@@ -11,11 +11,11 @@ convert cli arguments to parse structure
 unify exit code return
 */
 
-use crate::error::Error;
+use crate::error::{_Error, Error};
 use std::path::PathBuf;
 
 // parse function
-pub fn parse() -> Result<Args, Error> {
+pub fn _parse() -> Result<Args, Error> {
     let input_arg: Vec<String> = std::env::args().collect();
     let cli = args(input_arg)?;
     let args = Args::from_cli(cli)?;
@@ -157,4 +157,49 @@ fn determine_mode(cli: &Cli) -> Result<Mode, Error> {
     };
 
     Ok(mode)
+}
+
+/// # Arguments Config
+/// include query pattern, input source, match mode and print mode
+pub struct Config {
+    pattern: String,
+    input_source: Option<PathBuf>,
+    match_mode: MatchMode,
+    print_mode: PrintMode,
+}
+
+/// # Match Search Mode
+#[derive(Debug)]
+pub enum MatchMode {
+    IgnoreCase,
+}
+
+/// # Print Output Mode
+#[derive(Debug)]
+pub enum PrintMode {
+    CountOnly,
+}
+
+impl std::fmt::Display for Config {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Config: {}, {:?}, {:?}, {:?}",
+            self.pattern, self.input_source, self.match_mode, self.print_mode
+        )
+    }
+}
+
+/// # Parse function
+pub fn parse() -> Result<Config, _Error> {
+    let config = Config {
+        pattern: "d".into(),
+        input_source: None,
+        match_mode: MatchMode::IgnoreCase,
+        print_mode: PrintMode::CountOnly,
+    };
+
+    println!("{}", config);
+
+    Ok(config)
 }

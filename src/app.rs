@@ -1,7 +1,17 @@
 /*
 This module is organize work flow
- */
-use crate::cli::parse;
+*/
+
+/* ！
+1.  unify data model, only transmit line and config, don't transmit IO
+2.  tubular structure, dependency direction is one way
+3.  independent module, accept distinct input, can single test, don't mock
+    inner type in other layer
+    cli -> Config, source -> only create Line, matcher -> pure function,
+    printer -> format + write IO
+*/
+
+use crate::cli::{_parse, parse};
 use crate::error::Error;
 use crate::matcher::{Match, NeedMatch};
 use crate::printer::{NeedPrint, Print};
@@ -28,9 +38,9 @@ hard to test and extent, error handle is confusion
 # error module not unified
 */
 
-pub fn run() -> Result<(), Error> {
+pub fn _run() -> Result<(), Error> {
     // arguments input and parse
-    let args = parse()?;
+    let args = _parse()?;
 
     // read need search content like file or stdin
     // next stage, need add mode match
@@ -61,6 +71,13 @@ pub fn run() -> Result<(), Error> {
 
     // current stage, only support normal and count only mode
     let _ = need_print.print();
+
+    Ok(())
+}
+
+// work process construction
+pub fn run() -> Result<(), Error> {
+    let _ = parse();
 
     Ok(())
 }

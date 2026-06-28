@@ -1,15 +1,19 @@
 /*
 this is the entry point
-
-mvp version end is 0.1.0
-current stage unfinished: error handle is weak and not have test
-next stage: refactor and design standard running flow
 */
-fn main() {
-    let stats = cngrep::app::run();
 
-    match stats {
-        Ok(_) => (),
-        Err(e) => println!("{e}"),
+// Exit Code and Error Handle module
+use std::process::ExitCode;
+
+fn main() -> ExitCode {
+    let status = cngrep::app::run();
+
+    match status {
+        Err(e) => {
+            eprintln!("{e}");
+            ExitCode::from(1)
+        }
+
+        Ok(_) => ExitCode::from(0),
     }
 }
