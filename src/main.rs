@@ -1,12 +1,14 @@
-/*
-this is the entry point
-*/
+mod cli;
+mod error;
 
-// Exit Code and Error Handle module
-use std::{path::PathBuf, process::ExitCode};
+use crate::{
+    cli::{ParseResult, SpecialArgs},
+    error::Error,
+};
 
-use cngrep::error::_Error;
+use std::process::ExitCode;
 
+// entry point
 fn main() -> ExitCode {
     match run() {
         Err(e) => {
@@ -18,53 +20,21 @@ fn main() -> ExitCode {
     }
 }
 
-#[derive(Debug)]
-pub struct Config {
-    pub pattern: String,
-    pub input_source: Option<PathBuf>,
-    pub mode: Mode,
-}
+fn run() -> Result<(), Error> {
+    let arg = ParseResult::build()?;
 
-#[derive(Debug)]
-pub enum Mode {
-    Search,
-    File,
-}
-
-#[derive(Debug)]
-pub enum ParseResult {
-    Ok(Config),
-    Err(_Error),
-    Special(SpecialMode),
-}
-
-#[derive(Debug)]
-pub enum SpecialMode {
-    Help,
-    Version,
-}
-
-fn run() -> Result<(), _Error> {
-    // parse arguments to obtain ParseResult
-    let pattern = "pattern".to_string();
-    let input_source = None;
-    let mode = Mode::Search;
-
-    let args = match ParseResult::Ok(Config {
-        pattern,
-        input_source,
-        mode,
-    }) {
-        ParseResult::Err(err) => return Err(err),
-        ParseResult::Special(_) => return Ok(()),
+    let args = match arg {
         ParseResult::Ok(cfg) => cfg,
+        ParseResult::Special(mode) => {
+            match mode {
+                SpecialArgs::Help(h) => println!("{h}"),
+                SpecialArgs::Version(v) => println!("{v}"),
+            }
+            return Ok(());
+        }
     };
 
-    // running search
-    match &args.mode {
-        Mode::Search => (),
-        Mode::File => (),
-    };
+    println!("{} {:?} {:?}", args.pattern, args.input_source, args.mode);
 
     Ok(())
 }

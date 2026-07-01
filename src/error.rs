@@ -8,7 +8,7 @@ use std::io;
 /// IO error is file read or result output stage,
 /// Internal error is shouldn't appearance with software running,
 #[derive(Debug)]
-pub enum _Error {
+pub enum Error {
     InvalidArg {
         r#type: String,
         context: String,
@@ -24,25 +24,25 @@ pub enum _Error {
     },
 }
 
-impl std::error::Error for _Error {}
+impl std::error::Error for Error {}
 
-impl From<io::Error> for _Error {
+impl From<io::Error> for Error {
     fn from(value: io::Error) -> Self {
-        _Error::IO {
+        Error::IO {
             source: value,
             context: None,
         }
     }
 }
 
-impl std::fmt::Display for _Error {
+impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            _Error::InvalidArg { r#type, context } => {
+            Error::InvalidArg { r#type, context } => {
                 write!(f, "invalid input {}: {}", r#type, context)
             }
 
-            _Error::IO { source, context } => {
+            Error::IO { source, context } => {
                 if let Some(ctx) = context {
                     write!(f, "{}: {}", ctx, source)
                 } else {
@@ -50,7 +50,7 @@ impl std::fmt::Display for _Error {
                 }
             }
 
-            _Error::Internal { context } => {
+            Error::Internal { context } => {
                 write!(f, "internal error: {}", context)
             }
         }
