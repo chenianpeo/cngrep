@@ -1,8 +1,6 @@
-mod cli;
-mod error;
-mod reader;
+use cngrep::matcher::search;
 
-use crate::{
+use cngrep::{
     cli::{ParseResult, SpecialArgs},
     error::Error,
     reader::read,
@@ -39,15 +37,9 @@ fn run() -> Result<(), Error> {
         }
     };
 
-    println!("{:?}", args);
+    let mut read_result = read(&args.input_source, &args.mode)?;
 
-    let read_result = read(&args.input_source, &args.mode)?;
-
-    match read_result {
-        reader::ReadResult::Stdin(stdin) => println!("{:?}", stdin),
-        reader::ReadResult::File(file) => println!("{:?}", file),
-        reader::ReadResult::Dir(dir) => println!("{:?}", dir),
-    }
+    let _ = search(&args.pattern, &mut read_result, &args.mode);
 
     Ok(())
 }
