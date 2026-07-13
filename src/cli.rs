@@ -50,6 +50,13 @@ impl ParseResult {
         let mut args: Vec<String> = std::env::args().collect();
         args.remove(0);
 
+        if args.is_empty() {
+            return Err(Error::InvalidArg {
+                r#type: "arguments".into(),
+                context: "must least 1 arguments".into(),
+            });
+        }
+
         for arg in &args {
             if arg.contains("-h") {
                 return Ok(ParseResult::Special(SpecialArgs::Help(help())));
@@ -58,55 +65,44 @@ impl ParseResult {
             }
         }
 
-        if args.len() == 0 {
-            return Err(Error::InvalidArg {
-                r#type: "arguments".into(),
-                context: "must least 1 arguments".into(),
-            });
-        }
-
         let pattern = parse_pattern(&args)?;
         let input_source = parse_source(&args)?;
         let mode = parse_mode(&args)?;
 
-        Ok(ParseResult::Ok(Config {
+        let config = Config {
             pattern,
             input_source,
             mode,
-        }))
+        };
+
+        Ok(ParseResult::Ok(config))
     }
 }
 
 /// parse arguments pattern
 fn parse_pattern(args: &[String]) -> Result<String, Error> {
-    if args.len() < 1 {
-        return Err(Error::Internal {
-            context: "args number already conduct".to_string(),
-        });
-    }
-
     Ok(args[0].clone())
 }
 
 /// parse input source
 fn parse_source(args: &[String]) -> Result<Option<PathBuf>, Error> {
-    if args.len() < 2 {
+    let Some(path) = args.get(1) else {
         return Ok(None);
-    } else {
-        let path = PathBuf::from(args[1].clone());
-        return Ok(Some(path));
-    }
+    };
+
+    let path = PathBuf::from(path);
+    Ok(Some(path))
 }
 
 /// parse running mode
 fn parse_mode(args: &[String]) -> Result<Mode, Error> {
     if args.len() < 3 {
-        return Ok(Mode::Normal);
+        Ok(Mode::Normal)
     } else if args[2] == "-c" {
-        return Ok(Mode::CountOnly);
+        Ok(Mode::CountOnly)
     } else {
-        return Err(Error::Internal {
+        Err(Error::Internal {
             context: "don't support this mode".into(),
-        });
+        })
     }
 }

@@ -1,9 +1,11 @@
 mod cli;
 mod error;
+mod reader;
 
 use crate::{
     cli::{ParseResult, SpecialArgs},
     error::Error,
+    reader::read,
 };
 
 use std::process::ExitCode;
@@ -20,6 +22,9 @@ fn main() -> ExitCode {
     }
 }
 
+/// # work flow construct
+///
+/// schedule module running and dispatch
 fn run() -> Result<(), Error> {
     let arg = ParseResult::build()?;
 
@@ -34,7 +39,15 @@ fn run() -> Result<(), Error> {
         }
     };
 
-    println!("{} {:?} {:?}", args.pattern, args.input_source, args.mode);
+    println!("{:?}", args);
+
+    let read_result = read(&args.input_source, &args.mode)?;
+
+    match read_result {
+        reader::ReadResult::Stdin(stdin) => println!("{:?}", stdin),
+        reader::ReadResult::File(file) => println!("{:?}", file),
+        reader::ReadResult::Dir(dir) => println!("{:?}", dir),
+    }
 
     Ok(())
 }
