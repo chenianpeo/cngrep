@@ -39,7 +39,9 @@ fn run() -> Result<(), Error> {
 
     let mut read_result = read(&args.input_source, &args.mode)?;
 
-    let _ = search(&args.pattern, &mut read_result, &args.mode);
+    let search_result = search(&args.pattern, &mut read_result, &args.mode)?;
+
+    println!("{:#?}", search_result);
 
     Ok(())
 }
