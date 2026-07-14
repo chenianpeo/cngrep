@@ -14,8 +14,6 @@ pub fn search(pattern: &str, read_result: &mut ReadResult, _mode: &Mode) -> Resu
         }
 
         ReadResult::File(file) => {
-            println!("{}", file.path.canonicalize()?.display());
-
             for (line_no, line) in (&mut file.reader).lines().enumerate() {
                 let line = line?;
                 if line.contains(pattern) {
@@ -26,14 +24,6 @@ pub fn search(pattern: &str, read_result: &mut ReadResult, _mode: &Mode) -> Resu
 
         ReadResult::Dir(dir) => {
             for file in dir {
-                // judge support file type
-                if matches!(
-                    file.path.extension().and_then(|s| s.to_str()),
-                    Some("pdf" | "epub")
-                ) {
-                    continue;
-                }
-
                 // println file and result
                 println!("{}", file.path.canonicalize()?.display());
 

@@ -33,9 +33,20 @@ pub fn read(input_source: &Option<PathBuf>, _mode: &Mode) -> Result<ReadResult, 
         Some(path) if path.is_dir() => {
             let result = path
                 .read_dir()?
+                .filter_map(|s| {
+                    if matches!(
+                        s.as_ref().ok()?.path().extension().and_then(|s| s.to_str()),
+                        Some("pdf" | "epub")
+                    ) {
+                        None
+                    } else {
+                        Some(s)
+                    }
+                })
                 .map(|entry| {
                     let path = entry?.path();
                     let file = File::open(&path)?;
+
                     Ok(ReadF {
                         path,
                         reader: BufReader::new(file),
