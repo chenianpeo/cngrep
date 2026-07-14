@@ -1,8 +1,3 @@
-// match result build in this
-// stdin: content
-// file: [line number, content]
-// dir: [file name [line number, content]]
-
 use std::path::PathBuf;
 
 #[derive(Debug)]

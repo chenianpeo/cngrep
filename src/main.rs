@@ -1,5 +1,6 @@
 use cngrep::matcher::search;
 
+use cngrep::printer::render;
 use cngrep::{
     cli::{ParseResult, SpecialArgs},
     error::Error,
@@ -41,7 +42,7 @@ fn run() -> Result<(), Error> {
 
     let search_result = search(&args.pattern, &mut read_result, &args.mode)?;
 
-    println!("{:#?}", search_result);
+    let _ = render(&search_result);
 
     Ok(())
 }
