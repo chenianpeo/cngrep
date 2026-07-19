@@ -2,12 +2,11 @@ use std::path::PathBuf;
 
 use crate::error::Error;
 
-/// cli arguments config
 #[derive(Debug)]
 pub struct Config {
     pub pattern: String,
-    pub input_source: Option<PathBuf>,
-    pub mode: Mode,
+    pub input_source: Vec<PathBuf>,
+    pub mode: Vec<Mode>,
 }
 
 /// running parameters
@@ -27,25 +26,30 @@ pub enum ParseResult {
 /// running special args
 #[derive(Debug)]
 pub enum SpecialArgs {
-    Help(String),
-    Version(String),
+    Help(&'static str),
+    Version(&'static str),
 }
 
-use std::fmt::Write;
 /// obtain software version
-fn version() -> String {
-    let mut version = String::new();
-    let _ = write!(version, "ripgrep: {}", env!("CARGO_PKG_VERSION"));
-    version
+fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
 }
 
 /// software help information
-fn help() -> String {
-    "Help: ".to_string()
+fn help() -> &'static str {
+    r#"Usage: 
+    cngrep [OPTIONS] <PATTERN> [PATH]
+
+Arguments:
+    <PATTERN>   Search pattern
+    [PATH]      File or directory to search
+
+Options:
+    -c, --CountOnly     Count matches only
+    "#
 }
 
 impl ParseResult {
-    /// parse arguments
     pub fn build() -> Result<ParseResult, Error> {
         let mut args: Vec<String> = std::env::args().collect();
         args.remove(0);
@@ -85,24 +89,21 @@ fn parse_pattern(args: &[String]) -> Result<String, Error> {
 }
 
 /// parse input source
-fn parse_source(args: &[String]) -> Result<Option<PathBuf>, Error> {
-    let Some(path) = args.get(1) else {
-        return Ok(None);
-    };
-
-    let path = PathBuf::from(path);
-    Ok(Some(path))
+fn parse_source(args: &[String]) -> Result<Vec<PathBuf>, Error> {
+    let input_source = &args[1];
+    let path = PathBuf::from(input_source);
+    let mut path_vec: Vec<PathBuf> = Vec::new();
+    path_vec.push(path);
+    Ok(path_vec)
 }
 
 /// parse running mode
-fn parse_mode(args: &[String]) -> Result<Mode, Error> {
-    if args.len() < 3 {
-        Ok(Mode::Normal)
-    } else if args[2] == "-c" {
-        Ok(Mode::CountOnly)
-    } else {
-        Err(Error::Internal {
-            context: "don't support this mode".into(),
-        })
+fn parse_mode(args: &[String]) -> Result<Vec<Mode>, Error> {
+    let mode = &args[2];
+    let mut mode_vec: Vec<Mode> = Vec::new();
+    if mode == "-c" {
+        mode_vec.push(Mode::CountOnly);
     }
+
+    Ok(mode_vec)
 }

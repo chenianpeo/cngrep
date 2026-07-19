@@ -1,9 +1,8 @@
 [package]
-name = "cngrep"
+name = "cg"
 version = "0.0.1"
 authors = ["Ian Chen <chenianpeo@163.com>"]
 edition = "2024"
 rust-version = "1.98"
 
 [dependencies]
-owo-colors = "4.3.0"

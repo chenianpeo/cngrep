@@ -1,10 +1,6 @@
-use cngrep::matcher::search;
-
-use cngrep::printer::render;
-use cngrep::{
-    cli::{ParseResult, SpecialArgs},
+use cg::{
+    cli::ParseResult,
     error::Error,
-    reader::read,
 };
 
 use std::process::ExitCode;
@@ -27,22 +23,24 @@ fn main() -> ExitCode {
 fn run() -> Result<(), Error> {
     let arg = ParseResult::build()?;
 
-    let args = match arg {
-        ParseResult::Ok(cfg) => cfg,
-        ParseResult::Special(mode) => {
-            match mode {
-                SpecialArgs::Help(h) => println!("{h}"),
-                SpecialArgs::Version(v) => println!("{v}"),
-            }
-            return Ok(());
-        }
-    };
+    println!("{:?}", arg);
+    
+    // let args = match arg {
+    //     ParseResult::Ok(cfg) => cfg,
+    //     ParseResult::Special(mode) => {
+    //         match mode {
+    //             SpecialArgs::Help(h) => println!("{h}"),
+    //             SpecialArgs::Version(v) => println!("{v}"),
+    //         }
+    //         return Ok(());
+    //     }
+    // };
 
-    let mut read_result = read(&args.input_source, &args.mode)?;
+    // let mut read_result = read(&args.input_source, &args.mode)?;
 
-    let search_result = search(&args.pattern, &mut read_result, &args.mode)?;
+    // let search_result = search(&args.pattern, &mut read_result, &args.mode)?;
 
-    let _ = render(&search_result);
+    // let _ = render(&search_result);
 
     Ok(())
 }
