@@ -1,7 +1,4 @@
-use cg::{
-    cli::ParseResult,
-    error::Error,
-};
+use cg::{cli::ParseResult, error::Error};
 
 use std::process::ExitCode;
 
@@ -24,7 +21,7 @@ fn run() -> Result<(), Error> {
     let arg = ParseResult::build()?;
 
     println!("{:?}", arg);
-    
+
     // let args = match arg {
     //     ParseResult::Ok(cfg) => cfg,
     //     ParseResult::Special(mode) => {

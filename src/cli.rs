@@ -85,22 +85,40 @@ impl ParseResult {
 
 /// parse arguments pattern
 fn parse_pattern(args: &[String]) -> Result<String, Error> {
-    Ok(args[0].clone())
+    let mut pattern = "".to_string();
+
+    if args.len() == 1 {
+        pattern = args[0].clone();
+    }
+
+    println!("{}", args[0]);
+
+    Ok(pattern)
 }
 
 /// parse input source
 fn parse_source(args: &[String]) -> Result<Vec<PathBuf>, Error> {
+    let mut path_vec: Vec<PathBuf> = Vec::new();
+
+    if args.len() == 1 {
+        return Ok(path_vec);
+    }
+
     let input_source = &args[1];
     let path = PathBuf::from(input_source);
-    let mut path_vec: Vec<PathBuf> = Vec::new();
     path_vec.push(path);
     Ok(path_vec)
 }
 
 /// parse running mode
 fn parse_mode(args: &[String]) -> Result<Vec<Mode>, Error> {
-    let mode = &args[2];
     let mut mode_vec: Vec<Mode> = Vec::new();
+
+    if args.len() < 3 {
+        return Ok(mode_vec);
+    }
+
+    let mode = &args[2];
     if mode == "-c" {
         mode_vec.push(Mode::CountOnly);
     }
