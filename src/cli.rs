@@ -85,13 +85,7 @@ impl ParseResult {
 
 /// parse arguments pattern
 fn parse_pattern(args: &[String]) -> Result<String, Error> {
-    let mut pattern = "".to_string();
-
-    if args.len() == 1 {
-        pattern = args[0].clone();
-    }
-
-    println!("{}", args[0]);
+    let pattern = args[0].clone();
 
     Ok(pattern)
 }

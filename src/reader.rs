@@ -19,51 +19,55 @@ pub struct ReadF {
     pub reader: BufReader<File>,
 }
 
-pub fn read(input_source: &Option<PathBuf>, _mode: &Mode) -> Result<ReadResult, Error> {
-    match input_source {
-        Some(path) if path.is_file() => {
-            let file = File::open(path)?;
-            // Ok(ReadResult::File(BufReader::new(file)))
+pub fn read(input_source: &[PathBuf], _mode: &[Mode]) -> Result<ReadResult, Error> {
+    if input_source.is_empty() {
+        let stdin = std::io::stdin();
+        Ok(ReadResult::Stdin(BufReader::new(stdin)))
+    } else if input_source[0].is_dir() {
+        let result = input_source[0]
+            .read_dir()?
+            .filter_map(|s| {
+                if matches!(
+                    s.as_ref().ok()?.path().extension().and_then(|s| s.to_str()),
+                    Some("pdf" | "epub")
+                ) {
+                    None
+                } else {
+                    Some(s)
+                }
+            })
+            .map(|entry| {
+                let path = entry?.path();
+                let file = File::open(&path)?;
+
+                Ok(ReadF {
+                    path,
+                    reader: BufReader::new(file),
+                })
+            })
+            .collect::<Result<Vec<_>, Error>>()?;
+
+        Ok(ReadResult::Dir(result))
+    } else {
+        if input_source.len() == 1 {
+            let file = File::open(input_source[0].clone())?;
             Ok(ReadResult::File(ReadF {
-                path: path.to_path_buf(),
+                path: input_source[0].clone(),
                 reader: BufReader::new(file),
             }))
-        }
-
-        Some(path) if path.is_dir() => {
-            let result = path
-                .read_dir()?
-                .filter_map(|s| {
-                    if matches!(
-                        s.as_ref().ok()?.path().extension().and_then(|s| s.to_str()),
-                        Some("pdf" | "epub")
-                    ) {
-                        None
-                    } else {
-                        Some(s)
-                    }
-                })
+        } else {
+            let result = input_source
+                .iter()
                 .map(|entry| {
-                    let path = entry?.path();
-                    let file = File::open(&path)?;
-
+                    let path = entry;
+                    let file = File::open(entry)?;
                     Ok(ReadF {
-                        path,
+                        path: path.to_path_buf(),
                         reader: BufReader::new(file),
                     })
                 })
                 .collect::<Result<Vec<_>, Error>>()?;
-
             Ok(ReadResult::Dir(result))
         }
-
-        None => {
-            let stdin = std::io::stdin();
-            Ok(ReadResult::Stdin(BufReader::new(stdin)))
-        }
-
-        _ => Err(Error::Internal {
-            context: "read input source".into(),
-        }),
     }
 }

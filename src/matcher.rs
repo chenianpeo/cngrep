@@ -10,7 +10,7 @@ use crate::{
 pub fn search(
     pattern: &str,
     read_result: &mut ReadResult,
-    _mode: &Mode,
+    _mode: &[Mode],
 ) -> Result<MatchResult, Error> {
     let result: MatchResult = match read_result {
         ReadResult::Stdin(stdin) => {
