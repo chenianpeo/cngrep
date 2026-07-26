@@ -22,9 +22,10 @@ fn main() -> ExitCode {
 ///
 /// schedule module running and dispatch
 fn run() -> Result<(), Error> {
+    // parse cli arguments
     let arg = ParseResult::build()?;
 
-    let _args = match arg {
+    let args = match arg {
         ParseResult::Ok(cfg) => cfg,
         ParseResult::Special(mode) => {
             match mode {
@@ -35,10 +36,13 @@ fn run() -> Result<(), Error> {
         }
     };
 
-    let mut read_result = read(&_args.input_source, &_args.mode)?;
+    // read file content
+    let mut read_result = read(&args.input_source, &args.mode)?;
 
-    let search_result = search(&_args.pattern, &mut read_result, &_args.mode)?;
+    // pattern search match
+    let search_result = search(&args.pattern, &mut read_result, &args.mode)?;
 
+    // result output
     let _ = render(&search_result);
 
     Ok(())

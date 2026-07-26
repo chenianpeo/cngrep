@@ -20,6 +20,7 @@ pub struct ReadF {
 }
 
 pub fn read(input_source: &[PathBuf], _mode: &[Mode]) -> Result<ReadResult, Error> {
+    // need judge stdin or current path when vec is empty
     if input_source.is_empty() {
         let stdin = std::io::stdin();
         Ok(ReadResult::Stdin(BufReader::new(stdin)))

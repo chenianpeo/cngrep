@@ -1,7 +1,7 @@
+use crate::error::Error;
 use std::path::PathBuf;
 
-use crate::error::Error;
-
+/// Arguments parse struct
 #[derive(Debug)]
 pub struct Config {
     pub pattern: String,
@@ -10,7 +10,7 @@ pub struct Config {
 }
 
 /// running parameters
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Mode {
     Normal,
     CountOnly,
@@ -28,25 +28,6 @@ pub enum ParseResult {
 pub enum SpecialArgs {
     Help(&'static str),
     Version(&'static str),
-}
-
-/// obtain software version
-fn version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
-}
-
-/// software help information
-fn help() -> &'static str {
-    r#"Usage: 
-    cngrep [OPTIONS] <PATTERN> [PATH]
-
-Arguments:
-    <PATTERN>   Search pattern
-    [PATH]      File or directory to search
-
-Options:
-    -c, --CountOnly     Count matches only
-    "#
 }
 
 impl ParseResult {
@@ -77,30 +58,68 @@ impl ParseResult {
 }
 
 /// parse arguments
-fn parse_args(vec: &Vec<String>) -> Result<Config, Error> {
+fn parse_args(vec: &[String]) -> Result<Config, Error> {
     match vec {
-        args if vec.len() == 1 => Ok(Config {
-            pattern: args[0].clone(),
+        vec if vec.len() == 1 => Ok(Config {
+            pattern: vec[0].clone(),
             input_source: Vec::<PathBuf>::new(),
             mode: Vec::<Mode>::new(),
         }),
 
-        args if vec.len() == 2 => Ok(Config {
-            pattern: args[0].clone(),
-            input_source: vec![PathBuf::from(args[1].clone())],
-            mode: Vec::<Mode>::new(),
-        }),
+        // cg t -c, cg t file,
+        vec if vec.len() == 2 => {
+            let mut pattern_no: usize = 0;
+            let mut pattern;
+            let mut input_source: Vec<PathBuf> = Vec::new();
+            let mut mode: Vec<Mode> = Vec::new();
 
-        args if vec.len() >= 3 => {
+            for (no, string) in vec.iter().enumerate() {
+                //judge whether exist mode
+                if Some('-') == string.chars().nth(0) {
+                    for i in 1..string.len() {
+                        if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
+                            mode.push(Mode::CountOnly);
+                        }
+                    }
+
+                    if no == pattern_no {
+                        pattern_no = 1;
+                    }
+                }
+
+                if PathBuf::from(string).is_file() || PathBuf::from(string).is_dir() {
+                    input_source.push(PathBuf::from(string));
+
+                    if no == pattern_no {
+                        pattern_no = 1;
+                    }
+                }
+            }
+
+            pattern = vec[pattern_no].clone();
+
+            if !input_source.is_empty() && !mode.is_empty() {
+                pattern = "".to_string();
+            }
+
+            Ok(Config {
+                pattern,
+                input_source,
+                mode,
+            })
+        }
+
+        // path, multiple file
+        vec if vec.len() >= 3 => {
             let mut path_vec: Vec<PathBuf> = Vec::new();
-            for (number, arg) in args.iter().enumerate() {
-                if number == 0 || number == (args.len() - 1) {
+            for (number, arg) in vec.iter().enumerate() {
+                if number == 0 || number == (vec.len() - 1) {
                     continue;
                 }
                 path_vec.push(PathBuf::from(arg));
             }
             Ok(Config {
-                pattern: args[0].clone(),
+                pattern: vec[0].clone(),
                 input_source: path_vec,
                 mode: vec![Mode::CountOnly],
             })
@@ -147,4 +166,23 @@ fn _parse_mode(args: &[String]) -> Result<Vec<Mode>, Error> {
     }
 
     Ok(mode_vec)
+}
+
+/// obtain software version
+fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
+
+/// software help information
+fn help() -> &'static str {
+    r#"Usage: 
+    cngrep [OPTIONS] <PATTERN> [PATH]
+
+Arguments:
+    <PATTERN>   Search pattern
+    [PATH]      File or directory to search
+
+Options:
+    -c, --CountOnly     Count matches only
+    "#
 }
