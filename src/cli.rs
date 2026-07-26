@@ -69,29 +69,58 @@ impl ParseResult {
             }
         }
 
-        let pattern = parse_pattern(&args)?;
-        let input_source = parse_source(&args)?;
-        let mode = parse_mode(&args)?;
-
-        let config = Config {
-            pattern,
-            input_source,
-            mode,
-        };
+        let config = parse_args(&args)?;
+        println!("{:?}", config);
 
         Ok(ParseResult::Ok(config))
     }
 }
 
+/// parse arguments
+fn parse_args(vec: &Vec<String>) -> Result<Config, Error> {
+    match vec {
+        args if vec.len() == 1 => Ok(Config {
+            pattern: args[0].clone(),
+            input_source: Vec::<PathBuf>::new(),
+            mode: Vec::<Mode>::new(),
+        }),
+
+        args if vec.len() == 2 => Ok(Config {
+            pattern: args[0].clone(),
+            input_source: vec![PathBuf::from(args[1].clone())],
+            mode: Vec::<Mode>::new(),
+        }),
+
+        args if vec.len() >= 3 => {
+            let mut path_vec: Vec<PathBuf> = Vec::new();
+            for (number, arg) in args.iter().enumerate() {
+                if number == 0 || number == (args.len() - 1) {
+                    continue;
+                }
+                path_vec.push(PathBuf::from(arg));
+            }
+            Ok(Config {
+                pattern: args[0].clone(),
+                input_source: path_vec,
+                mode: vec![Mode::CountOnly],
+            })
+        }
+
+        _ => Err(Error::Internal {
+            context: "Not Finished".into(),
+        }),
+    }
+}
+
 /// parse arguments pattern
-fn parse_pattern(args: &[String]) -> Result<String, Error> {
+fn _parse_pattern(args: &[String]) -> Result<String, Error> {
     let pattern = args[0].clone();
 
     Ok(pattern)
 }
 
 /// parse input source
-fn parse_source(args: &[String]) -> Result<Vec<PathBuf>, Error> {
+fn _parse_source(args: &[String]) -> Result<Vec<PathBuf>, Error> {
     let mut path_vec: Vec<PathBuf> = Vec::new();
 
     if args.len() == 1 {
@@ -105,7 +134,7 @@ fn parse_source(args: &[String]) -> Result<Vec<PathBuf>, Error> {
 }
 
 /// parse running mode
-fn parse_mode(args: &[String]) -> Result<Vec<Mode>, Error> {
+fn _parse_mode(args: &[String]) -> Result<Vec<Mode>, Error> {
     let mut mode_vec: Vec<Mode> = Vec::new();
 
     if args.len() < 3 {
