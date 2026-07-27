@@ -42,7 +42,7 @@ pub fn search(
             MatchResult::File(result)
         }
 
-        ReadResult::Dir(dir) => {
+        ReadResult::MultiFile(dir) => {
             let mut result: Vec<MatchDir> = Vec::new();
 
             for file in dir {
