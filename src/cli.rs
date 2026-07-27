@@ -75,7 +75,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
 
             for (no, string) in vec.iter().enumerate() {
                 //judge whether exist mode
-                if Some('-') == string.chars().nth(0) {
+                if string.starts_with('-') {
                     for i in 1..string.len() {
                         if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
                             mode.push(Mode::CountOnly);
@@ -111,17 +111,38 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
 
         // path, multiple file
         vec if vec.len() >= 3 => {
-            let mut path_vec: Vec<PathBuf> = Vec::new();
-            for (number, arg) in vec.iter().enumerate() {
-                if number == 0 || number == (vec.len() - 1) {
-                    continue;
+            let mut other_no_list: Vec<usize> = Vec::new();
+            let mut pattern_no: usize = 0;
+            let mut input_source: Vec<PathBuf> = Vec::new();
+            let mut mode: Vec<Mode> = Vec::new();
+
+            for (no, string) in vec.iter().enumerate() {
+                if string.starts_with('-') {
+                    for i in 1..string.len() {
+                        if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
+                            mode.push(Mode::CountOnly);
+                        }
+                    }
+
+                    other_no_list.push(no);
                 }
-                path_vec.push(PathBuf::from(arg));
+
+                if PathBuf::from(string).is_file() || PathBuf::from(string).is_dir() {
+                    input_source.push(PathBuf::from(string));
+                    other_no_list.push(no);
+                }
             }
+
+            for i in 0..vec.len() {
+                if !other_no_list.contains(&i) {
+                    pattern_no = i;
+                }
+            }
+
             Ok(Config {
-                pattern: vec[0].clone(),
-                input_source: path_vec,
-                mode: vec![Mode::CountOnly],
+                pattern: vec[pattern_no].clone(),
+                input_source,
+                mode,
             })
         }
 

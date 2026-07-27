@@ -2,7 +2,7 @@ use std::{
     env,
     fs::File,
     io::{BufReader, IsTerminal, Stdin},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use crate::{cli::Mode, error::Error};
@@ -26,7 +26,7 @@ pub fn read(input_source: &[PathBuf], _mode: &[Mode]) -> Result<ReadResult, Erro
         let stdin = std::io::stdin();
 
         if stdin.is_terminal() {
-            let result = recursive_directory(&env::current_dir()?, &_mode)?;
+            let result = recursive_directory(&env::current_dir()?, _mode)?;
 
             Ok(ReadResult::MultiFile(result))
         } else {
@@ -61,7 +61,7 @@ pub fn read(input_source: &[PathBuf], _mode: &[Mode]) -> Result<ReadResult, Erro
 }
 
 // recursion directory
-fn recursive_directory(dir: &PathBuf, _mode: &[Mode]) -> Result<Vec<ReadFile>, Error> {
+fn recursive_directory(dir: &Path, _mode: &[Mode]) -> Result<Vec<ReadFile>, Error> {
     let mut result: Vec<ReadFile> = Vec::new();
 
     for entry in dir.read_dir()? {
@@ -69,7 +69,7 @@ fn recursive_directory(dir: &PathBuf, _mode: &[Mode]) -> Result<Vec<ReadFile>, E
         let path = entry.path();
 
         if path.is_dir() {
-            for file in recursive_directory(&path, &_mode)? {
+            for file in recursive_directory(&path, _mode)? {
                 result.push(file);
             }
             continue;
