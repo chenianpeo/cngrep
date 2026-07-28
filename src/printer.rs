@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
-use crate::{error::Error, result::MatchResult};
+use crate::{cli::Mode, error::Error, result::MatchResult};
 
-pub fn render(result: &MatchResult) -> Result<(), Error> {
+pub fn render(_pattern: &str, result: &MatchResult, _mode: &[Mode]) -> Result<(), Error> {
     match result {
         MatchResult::Stdin(stdin_result) => {
             if stdin_result.is_empty() {
@@ -13,7 +13,7 @@ pub fn render(result: &MatchResult) -> Result<(), Error> {
             }
 
             for stdin in stdin_result {
-                println!("{}", stdin.content);
+                println!("{}", stdin.content.replace(_pattern, &_pattern.green()));
             }
         }
         MatchResult::File(file_result) => {
@@ -25,7 +25,11 @@ pub fn render(result: &MatchResult) -> Result<(), Error> {
             }
 
             for file in file_result {
-                println!("{}:{}", (file.line_no + 1).blue(), file.content);
+                println!(
+                    "{}:{}",
+                    (file.line_no + 1).blue(),
+                    file.content.replace(_pattern, &_pattern.green())
+                );
             }
         }
         MatchResult::Dir(dir_result) => {
@@ -40,7 +44,11 @@ pub fn render(result: &MatchResult) -> Result<(), Error> {
                 println!("{}", dir.path.display().yellow());
 
                 for file in dir.file.iter() {
-                    println!("{}:{}", (file.line_no + 1).blue(), file.content);
+                    println!(
+                        "{}:{}",
+                        (file.line_no + 1).blue(),
+                        file.content.replace(_pattern, &_pattern.green())
+                    );
                 }
 
                 if dir_no != dir_result.len() - 1 {
@@ -53,26 +61,6 @@ pub fn render(result: &MatchResult) -> Result<(), Error> {
     Ok(())
 }
 
-// pub trait Color {
-//     fn red(&self) -> String;
-//     fn blue(&self) -> String;
-//     fn yellow(&self) -> String;
-// }
-
-// impl<T: Display> Color for T {
-//     fn red(&self) -> String {
-//         format!("\x1b[31m{}\x1b[0m", self)
-//     }
-
-//     fn blue(&self) -> String {
-//         format!("\x1b[34m{}\x1b[0m", self)
-//     }
-
-//     fn yellow(&self) -> String {
-//         format!("\x1b[33m{}\x1b[0m", self)
-//     }
-// }
-
 pub trait Color: Display {
     fn color(&self, code: u8) -> String {
         format!("\x1b[{}m{}\x1b[0m", code, self)
@@ -80,6 +68,10 @@ pub trait Color: Display {
 
     fn red(&self) -> String {
         self.color(31)
+    }
+
+    fn green(&self) -> String {
+        self.color(32)
     }
 
     fn yellow(&self) -> String {

@@ -36,14 +36,11 @@ fn run() -> Result<(), Error> {
         }
     };
 
-    // read file content
-    let mut read_result = read(&args.input_source, &args.mode)?;
+    let read_result = read(&args.input_source, &args.mode)?;
 
-    // pattern search match
-    let search_result = search(&args.pattern, &mut read_result, &args.mode)?;
+    let search_result = search(&args.pattern, &read_result, &args.mode)?;
 
-    // result output
-    let _ = render(&search_result);
+    let _ = render(&args.pattern, &search_result, &args.mode);
 
     Ok(())
 }
