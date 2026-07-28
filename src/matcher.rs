@@ -1,4 +1,7 @@
-use std::io::BufRead;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 use crate::{
     cli::Mode,
@@ -9,65 +12,73 @@ use crate::{
 
 pub fn search(
     pattern: &str,
-    read_result: &mut ReadResult,
+    read_result: &ReadResult,
     _mode: &[Mode],
 ) -> Result<MatchResult, Error> {
     let result: MatchResult = match read_result {
-        ReadResult::Stdin(stdin) => {
-            let mut result: Vec<MatchStdin> = Vec::new();
+        ReadResult::Stdin => {
+            let stdin = std::io::stdin();
+            let mut match_result: Vec<MatchStdin> = Vec::new();
 
             for line in stdin.lines() {
                 let line = line?;
                 if line.contains(pattern) {
-                    result.push(MatchStdin { content: line });
+                    match_result.push(MatchStdin { content: line });
                 }
             }
 
-            MatchResult::Stdin(result)
+            MatchResult::Stdin(match_result)
         }
 
         ReadResult::File(file) => {
-            let mut result: Vec<MatchFile> = Vec::new();
+            let mut match_result: Vec<MatchFile> = Vec::new();
 
-            for (line_no, line) in (&mut file.reader).lines().enumerate() {
+            let file = File::open(file)?;
+            let content = BufReader::new(file);
+
+            for (line_no, line) in content.lines().enumerate() {
                 let line = line?;
+
                 if line.contains(pattern) {
-                    result.push(MatchFile {
+                    match_result.push(MatchFile {
                         line_no,
                         content: line,
                     });
                 }
             }
 
-            MatchResult::File(result)
+            MatchResult::File(match_result)
         }
 
-        ReadResult::MultiFile(dir) => {
-            let mut result: Vec<MatchDir> = Vec::new();
+        ReadResult::MultiFile(multi_file) => {
+            let mut dir_match_result: Vec<MatchDir> = Vec::new();
 
-            for file in dir {
-                let mut file_result: Vec<MatchFile> = Vec::new();
+            for single_file in multi_file {
+                let mut file_match_result: Vec<MatchFile> = Vec::new();
 
-                for (line_no, line) in (&mut file.reader).lines().enumerate() {
+                let open_file = File::open(single_file)?;
+                let content = BufReader::new(open_file);
+
+                for (line_no, line) in content.lines().enumerate() {
                     let line = line?;
 
                     if line.contains(pattern) {
-                        file_result.push(MatchFile {
+                        file_match_result.push(MatchFile {
                             line_no,
                             content: line,
                         });
                     }
                 }
 
-                if !file_result.is_empty() {
-                    result.push(MatchDir {
-                        path: file.path.canonicalize()?,
-                        file: file_result,
+                if !file_match_result.is_empty() {
+                    dir_match_result.push(MatchDir {
+                        path: single_file.canonicalize()?,
+                        file: file_match_result,
                     });
                 }
             }
 
-            MatchResult::Dir(result)
+            MatchResult::Dir(dir_match_result)
         }
     };
 
