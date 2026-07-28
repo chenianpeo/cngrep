@@ -136,6 +136,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             for i in 0..vec.len() {
                 if !other_no_list.contains(&i) {
                     pattern_no = i;
+                    break;
                 }
             }
 
