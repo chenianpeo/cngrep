@@ -68,6 +68,14 @@ fn recursive_directory(dir: &Path, _mode: &[Mode]) -> Result<Vec<ReadFile>, Erro
         let entry = entry?;
         let path = entry.path();
 
+        // skip .git or other directory
+        if let Some(path) = path.to_str()
+            && path.contains(".git")
+        {
+            continue;
+        }
+
+        // recursion open dir
         if path.is_dir() {
             for file in recursive_directory(&path, _mode)? {
                 result.push(file);
@@ -79,6 +87,7 @@ fn recursive_directory(dir: &Path, _mode: &[Mode]) -> Result<Vec<ReadFile>, Erro
             continue;
         }
 
+        // skip nonsupport file type
         if matches!(
             path.extension().and_then(|s| s.to_str()),
             Some("pdf" | "epub")
@@ -87,7 +96,6 @@ fn recursive_directory(dir: &Path, _mode: &[Mode]) -> Result<Vec<ReadFile>, Erro
         }
 
         let file = File::open(&path)?;
-
         result.push(ReadFile {
             path,
             reader: BufReader::new(file),
