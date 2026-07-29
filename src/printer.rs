@@ -116,6 +116,10 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
 
         SearchResult::Count(count_result) => match count_result {
             CountResult::SF(stdin_file) => {
+                if stdin_file == &0 {
+                    let not_fount = "Not Found".red();
+                    return Err(Error::Output { context: not_fount });
+                }
                 println!("{stdin_file}")
             }
 
@@ -132,6 +136,11 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                             single_file.number
                         );
                     }
+                }
+
+                if total_number == 0 {
+                    let not_fount = "Not Found".red();
+                    return Err(Error::Output { context: not_fount });
                 }
 
                 println!("Total Match Number: {total_number}");
