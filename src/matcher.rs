@@ -7,20 +7,24 @@ use std::{
 use crate::{
     cli::Mode,
     error::Error,
+    printer::{
+        CountMultiFile, CountResult, MatchMultiFile, MatchStdinFile,
+        NormalResult::{self},
+        SearchResult,
+    },
     reader::ReadResult,
-    result::{MatchDir, MatchFile, MatchResult, MatchStdin},
 };
 
 pub fn search(
     pattern: &str,
     read_result: &ReadResult,
-    _mode: &[Mode],
-) -> Result<MatchResult, Error> {
-    let result: MatchResult = match read_result {
+    mode: &[Mode],
+) -> Result<SearchResult, Error> {
+    let result: SearchResult = match read_result {
         ReadResult::Stdin => {
             let stdin = std::io::stdin();
 
-            if _mode.contains(&Mode::CountOnly) {
+            if mode.contains(&Mode::CountOnly) {
                 return stdin.count_search(pattern);
             }
 
@@ -28,7 +32,7 @@ pub fn search(
         }
 
         ReadResult::File(file) => {
-            if _mode.contains(&Mode::CountOnly) {
+            if mode.contains(&Mode::CountOnly) {
                 return file.count_search(pattern);
             }
 
@@ -36,7 +40,7 @@ pub fn search(
         }
 
         ReadResult::MultiFile(multi_file) => {
-            if _mode.contains(&Mode::CountOnly) {
+            if mode.contains(&Mode::CountOnly) {
                 return multi_file.count_search(pattern);
             }
 
@@ -48,8 +52,8 @@ pub fn search(
 }
 
 pub trait MatchSearch {
-    fn normal_search(&self, pattern: &str) -> Result<MatchResult, Error>;
-    fn count_search(&self, pattern: &str) -> Result<MatchResult, Error>;
+    fn normal_search(&self, pattern: &str) -> Result<SearchResult, Error>;
+    fn count_search(&self, pattern: &str) -> Result<SearchResult, Error>;
 }
 
 fn open_file(path: &PathBuf) -> Result<BufReader<File>, Error> {
@@ -58,22 +62,25 @@ fn open_file(path: &PathBuf) -> Result<BufReader<File>, Error> {
 }
 
 impl MatchSearch for Stdin {
-    fn normal_search(&self, pattern: &str) -> Result<MatchResult, Error> {
-        let mut match_result: Vec<MatchStdin> = Vec::new();
+    fn normal_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut match_result: Vec<MatchStdinFile> = Vec::new();
         let stdin_lock = self.lock();
 
-        for line in stdin_lock.lines() {
+        for (line_no, line) in stdin_lock.lines().enumerate() {
             let line = line?;
 
             if line.contains(pattern) {
-                match_result.push(MatchStdin { content: line });
+                match_result.push(MatchStdinFile {
+                    line_no,
+                    content: line,
+                });
             }
         }
 
-        Ok(MatchResult::Stdin(match_result))
+        Ok(SearchResult::Normal(NormalResult::SF(match_result)))
     }
 
-    fn count_search(&self, pattern: &str) -> Result<MatchResult, Error> {
+    fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
         let mut match_number: usize = 0;
         let stdin_lock = self.lock();
 
@@ -83,30 +90,30 @@ impl MatchSearch for Stdin {
             }
         }
 
-        Ok(MatchResult::Count(match_number))
+        Ok(SearchResult::Count(CountResult::SF(match_number)))
     }
 }
 
 impl MatchSearch for PathBuf {
-    fn normal_search(&self, pattern: &str) -> Result<MatchResult, Error> {
-        let mut match_result: Vec<MatchFile> = Vec::new();
+    fn normal_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut match_result: Vec<MatchStdinFile> = Vec::new();
 
         let content = open_file(self)?;
 
         for (line_no, line) in content.lines().enumerate() {
             let line = line?;
             if line.contains(pattern) {
-                match_result.push(MatchFile {
+                match_result.push(MatchStdinFile {
                     line_no,
                     content: line,
                 });
             }
         }
 
-        Ok(MatchResult::File(match_result))
+        Ok(SearchResult::Normal(NormalResult::SF(match_result)))
     }
 
-    fn count_search(&self, pattern: &str) -> Result<MatchResult, Error> {
+    fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
         let mut match_number: usize = 0;
 
         let content = open_file(self)?;
@@ -117,16 +124,16 @@ impl MatchSearch for PathBuf {
             }
         }
 
-        Ok(MatchResult::Count(match_number))
+        Ok(SearchResult::Count(CountResult::SF(match_number)))
     }
 }
 
 impl MatchSearch for Vec<PathBuf> {
-    fn normal_search(&self, pattern: &str) -> Result<MatchResult, Error> {
-        let mut dir_match_result: Vec<MatchDir> = Vec::new();
+    fn normal_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut dir_match_result: Vec<MatchMultiFile> = Vec::new();
 
         for single_file in self {
-            let mut file_match_result: Vec<MatchFile> = Vec::new();
+            let mut file_match_result: Vec<MatchStdinFile> = Vec::new();
 
             let content = open_file(single_file)?;
 
@@ -134,7 +141,7 @@ impl MatchSearch for Vec<PathBuf> {
                 let line = line?;
 
                 if line.contains(pattern) {
-                    file_match_result.push(MatchFile {
+                    file_match_result.push(MatchStdinFile {
                         line_no,
                         content: line,
                     });
@@ -142,18 +149,18 @@ impl MatchSearch for Vec<PathBuf> {
             }
 
             if !file_match_result.is_empty() {
-                dir_match_result.push(MatchDir {
+                dir_match_result.push(MatchMultiFile {
                     path: single_file.canonicalize()?,
                     file: file_match_result,
                 });
             }
         }
 
-        Ok(MatchResult::Dir(dir_match_result))
+        Ok(SearchResult::Normal(NormalResult::MF(dir_match_result)))
     }
 
-    fn count_search(&self, pattern: &str) -> Result<MatchResult, Error> {
-        let mut dir_match_number: usize = 0;
+    fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut dir_match: Vec<CountMultiFile> = Vec::new();
 
         for single_file in self {
             let mut file_match_number: usize = 0;
@@ -166,9 +173,12 @@ impl MatchSearch for Vec<PathBuf> {
                 }
             }
 
-            dir_match_number += file_match_number;
+            dir_match.push(CountMultiFile {
+                path: single_file.to_path_buf(),
+                number: file_match_number,
+            });
         }
 
-        Ok(MatchResult::Count(dir_match_number))
+        Ok(SearchResult::Count(CountResult::MF(dir_match)))
     }
 }
