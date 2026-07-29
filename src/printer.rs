@@ -1,63 +1,47 @@
 use std::fmt::Display;
 
-use crate::{
-    cli::Mode,
-    error::Error,
-    result::MatchResult::{self, Count},
-};
+use std::path::PathBuf;
 
-pub fn render(_pattern: &str, result: &MatchResult, _mode: &[Mode]) -> Result<(), Error> {
-    match result {
-        MatchResult::Stdin(stdin_result) => {
-            is_matched(stdin_result)?;
-
-            for stdin in stdin_result {
-                println!("{}", stdin.content.replace(_pattern, &_pattern.green()));
-            }
-        }
-
-        MatchResult::File(file_result) => {
-            is_matched(file_result)?;
-
-            for file in file_result {
-                println!(
-                    "{}:{}",
-                    (file.line_no + 1).blue(),
-                    file.content.replace(_pattern, &_pattern.green())
-                );
-            }
-        }
-
-        MatchResult::Dir(dir_result) => {
-            is_matched(dir_result)?;
-
-            for (dir_no, dir) in dir_result.iter().enumerate() {
-                println!("{}", dir.path.display().yellow());
-
-                for file in dir.file.iter() {
-                    println!(
-                        "{}:{}",
-                        (file.line_no + 1).blue(),
-                        file.content.replace(_pattern, &_pattern.green())
-                    );
-                }
-
-                if dir_no != dir_result.len() - 1 {
-                    println!();
-                }
-            }
-        }
-
-        Count(match_number) => {
-            println!("{match_number}");
-        }
-    }
-
-    Ok(())
+#[derive(Debug)]
+pub enum SearchResult {
+    Normal(NormalResult), // default match
+    Count(CountResult),   // match of count only
 }
 
-fn is_matched<T>(r: &[T]) ->Result<(), Error> {
-    let not_fount= "Not Found".red();
+#[derive(Debug)]
+pub enum NormalResult {
+    SF(Vec<MatchStdinFile>), // stdin and single file
+    MF(Vec<MatchMultiFile>), // multiple file and dir
+}
+
+#[derive(Debug)]
+pub enum CountResult {
+    SF(usize),
+    MF(Vec<CountMultiFile>),
+}
+
+#[derive(Debug)]
+pub struct MatchStdinFile {
+    pub line_no: usize,
+    pub content: String,
+}
+
+#[derive(Debug)]
+pub struct MatchMultiFile {
+    pub path: PathBuf,
+    pub file: Vec<MatchStdinFile>,
+}
+
+#[derive(Debug)]
+pub struct CountMultiFile {
+    pub path: PathBuf,
+    pub number: usize,
+}
+
+use crate::{cli::Mode, error::Error, reader::ReadResult};
+
+fn is_matched<T>(r: &[T]) -> Result<(), Error> {
+    let not_fount = "Not Found".red();
     if r.is_empty() {
         return Err(Error::Output { context: not_fount });
     }
@@ -65,6 +49,7 @@ fn is_matched<T>(r: &[T]) ->Result<(), Error> {
     Ok(())
 }
 
+// color output content
 pub trait Color: Display {
     fn color(&self, code: u8) -> String {
         format!("\x1b[{}m{}\x1b[0m", code, self)
@@ -88,3 +73,71 @@ pub trait Color: Display {
 }
 
 impl<T: Display> Color for T {}
+
+pub trait Print {
+    fn new(read_result: &ReadResult) -> Self;
+}
+
+pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(), Error> {
+    match result {
+        SearchResult::Normal(normal_result) => match normal_result {
+            NormalResult::SF(file_result) => {
+                is_matched(file_result)?;
+
+                for file in file_result {
+                    println!(
+                        "{}:{}",
+                        (file.line_no + 1).blue(),
+                        file.content.replace(_pattern, &_pattern.green())
+                    );
+                }
+            }
+
+            NormalResult::MF(dir_result) => {
+                is_matched(dir_result)?;
+
+                for (dir_no, dir) in dir_result.iter().enumerate() {
+                    println!("{}", dir.path.display().yellow());
+
+                    for file in dir.file.iter() {
+                        println!(
+                            "{}:{}",
+                            (file.line_no + 1).blue(),
+                            file.content.replace(_pattern, &_pattern.green())
+                        );
+                    }
+
+                    if dir_no != dir_result.len() - 1 {
+                        println!();
+                    }
+                }
+            }
+        },
+
+        SearchResult::Count(count_result) => match count_result {
+            CountResult::SF(stdin_file) => {
+                println!("{stdin_file}")
+            }
+
+            CountResult::MF(multi_file) => {
+                let mut total_number: usize = 0;
+
+                for single_file in multi_file {
+                    if single_file.number != 0 {
+                        total_number += single_file.number;
+
+                        println!(
+                            "{}: {}",
+                            single_file.path.display().yellow(),
+                            single_file.number
+                        );
+                    }
+                }
+
+                println!("Total Match Number: {total_number}");
+            }
+        },
+    }
+
+    Ok(())
+}
