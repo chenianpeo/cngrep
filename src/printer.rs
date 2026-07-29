@@ -1,6 +1,10 @@
 use std::fmt::Display;
 
-use crate::{cli::Mode, error::Error, result::MatchResult};
+use crate::{
+    cli::Mode,
+    error::Error,
+    result::MatchResult::{self, Count},
+};
 
 pub fn render(_pattern: &str, result: &MatchResult, _mode: &[Mode]) -> Result<(), Error> {
     match result {
@@ -55,6 +59,10 @@ pub fn render(_pattern: &str, result: &MatchResult, _mode: &[Mode]) -> Result<()
                     println!();
                 }
             }
+        }
+
+        Count(match_number) => {
+            println!("{match_number}");
         }
     }
 

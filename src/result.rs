@@ -5,6 +5,7 @@ pub enum MatchResult {
     Stdin(Vec<MatchStdin>),
     File(Vec<MatchFile>),
     Dir(Vec<MatchDir>),
+    Count(usize),
 }
 
 #[derive(Debug)]
