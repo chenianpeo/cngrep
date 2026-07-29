@@ -51,7 +51,6 @@ impl ParseResult {
         }
 
         let config = parse_args(&args)?;
-        println!("{:?}", config);
 
         Ok(ParseResult::Ok(config))
     }
