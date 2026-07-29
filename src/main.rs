@@ -40,7 +40,7 @@ fn run() -> Result<(), Error> {
 
     let search_result = search(&args.pattern, &read_result, &args.mode)?;
 
-    let _ = render(&args.pattern, &search_result, &args.mode);
+    render(&args.pattern, &search_result, &args.mode)?;
 
     Ok(())
 }

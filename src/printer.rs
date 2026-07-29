@@ -9,24 +9,15 @@ use crate::{
 pub fn render(_pattern: &str, result: &MatchResult, _mode: &[Mode]) -> Result<(), Error> {
     match result {
         MatchResult::Stdin(stdin_result) => {
-            if stdin_result.is_empty() {
-                return {
-                    println!("{}", "Not Found".red());
-                    Ok(())
-                };
-            }
+            is_matched(stdin_result)?;
 
             for stdin in stdin_result {
                 println!("{}", stdin.content.replace(_pattern, &_pattern.green()));
             }
         }
+
         MatchResult::File(file_result) => {
-            if file_result.is_empty() {
-                return {
-                    println!("{}", "Not Found".red());
-                    Ok(())
-                };
-            }
+            is_matched(file_result)?;
 
             for file in file_result {
                 println!(
@@ -36,13 +27,9 @@ pub fn render(_pattern: &str, result: &MatchResult, _mode: &[Mode]) -> Result<()
                 );
             }
         }
+
         MatchResult::Dir(dir_result) => {
-            if dir_result.is_empty() {
-                return {
-                    println!("{}", "Not Found".red());
-                    Ok(())
-                };
-            }
+            is_matched(dir_result)?;
 
             for (dir_no, dir) in dir_result.iter().enumerate() {
                 println!("{}", dir.path.display().yellow());
@@ -64,6 +51,15 @@ pub fn render(_pattern: &str, result: &MatchResult, _mode: &[Mode]) -> Result<()
         Count(match_number) => {
             println!("{match_number}");
         }
+    }
+
+    Ok(())
+}
+
+fn is_matched<T>(r: &[T]) ->Result<(), Error> {
+    let not_fount= "Not Found".red();
+    if r.is_empty() {
+        return Err(Error::Output { context: not_fount });
     }
 
     Ok(())

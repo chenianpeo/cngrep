@@ -22,6 +22,10 @@ pub enum Error {
     Internal {
         context: String,
     },
+
+    Output {
+        context: String,
+    },
 }
 
 impl std::error::Error for Error {}
@@ -52,6 +56,10 @@ impl std::fmt::Display for Error {
 
             Error::Internal { context } => {
                 write!(f, "internal error: {}", context)
+            }
+
+            Error::Output { context } => {
+                write!(f, "{context}")
             }
         }
     }
