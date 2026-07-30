@@ -1,7 +1,7 @@
 use crate::error::Error;
 use std::path::PathBuf;
 
-/// Arguments parse struct
+// Arguments parse struct
 #[derive(Debug)]
 pub struct Config {
     pub pattern: String,
@@ -9,21 +9,21 @@ pub struct Config {
     pub mode: Vec<Mode>,
 }
 
-/// running parameters
+// running parameters
 #[derive(Debug, PartialEq)]
 pub enum Mode {
     Normal,
     CountOnly,
 }
 
-/// arguments parse result
+// arguments parse result
 #[derive(Debug)]
 pub enum ParseResult {
     Ok(Config),
     Special(SpecialArgs),
 }
 
-/// running special args
+// running special args
 #[derive(Debug)]
 pub enum SpecialArgs {
     Help(&'static str),
@@ -31,9 +31,11 @@ pub enum SpecialArgs {
 }
 
 impl ParseResult {
+    // obtain command line arguments
+    // conduct special arguments like empty or help
     pub fn build() -> Result<ParseResult, Error> {
         let mut args: Vec<String> = std::env::args().collect();
-        args.remove(0);
+        args.remove(0); // remove first no use arg
 
         if args.is_empty() {
             return Err(Error::InvalidArg {
@@ -42,6 +44,7 @@ impl ParseResult {
             });
         }
 
+        // judge whether exist special option
         for arg in &args {
             if arg.contains("-h") {
                 return Ok(ParseResult::Special(SpecialArgs::Help(help())));
@@ -50,30 +53,39 @@ impl ParseResult {
             }
         }
 
+        // obtain user input arguments and parse return Config
         let config = parse_args(&args)?;
 
         Ok(ParseResult::Ok(config))
     }
 }
 
-/// parse arguments
+// parse arguments
 fn parse_args(vec: &[String]) -> Result<Config, Error> {
     match vec {
+        // match guard
+        // running code when satisfy condition statement
+        // match one argument, like `cg cngrep`
+        // must be pattern when args number is 1
         vec if vec.len() == 1 => Ok(Config {
             pattern: vec[0].clone(),
             input_source: Vec::<PathBuf>::new(),
             mode: Vec::<Mode>::new(),
         }),
 
-        // cg t -c, cg t file,
+        // match two arguments
+        // command like, `cg t -c`, `cg t file`,
+        // support random two args in [pattern] [path] [option]
         vec if vec.len() == 2 => {
-            let mut pattern_no: usize = 0;
+            let mut pattern_no: usize = 0; // judge pattern site
             let mut pattern;
             let mut input_source: Vec<PathBuf> = Vec::new();
             let mut mode: Vec<Mode> = Vec::new();
 
+            // traversal parameter
             for (no, string) in vec.iter().enumerate() {
-                //judge whether exist mode
+                // judge input option
+                // later can add "--" like "--help"
                 if string.starts_with('-') {
                     for i in 1..string.len() {
                         if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
@@ -81,11 +93,14 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                         }
                     }
 
+                    // get other argument
+                    // second arg is pattern when first argument is mode
                     if no == pattern_no {
                         pattern_no = 1;
                     }
                 }
 
+                // judge input path
                 if PathBuf::from(string).is_file() || PathBuf::from(string).is_dir() {
                     input_source.push(PathBuf::from(string));
 
@@ -95,8 +110,11 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                 }
             }
 
+            // obtain input pattern
             pattern = vec[pattern_no].clone();
 
+            // when not exist pattern in two arguments
+            // default match the entire document
             if !input_source.is_empty() && !mode.is_empty() {
                 pattern = "".to_string();
             }
@@ -108,10 +126,11 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             })
         }
 
-        // path, multiple file
+        // match three arguments or more
+        // support [pattern] [path] [option]
         vec if vec.len() >= 3 => {
-            let mut other_no_list: Vec<usize> = Vec::new();
-            let mut pattern_no: usize = 0;
+            let mut non_pattern: Vec<usize> = Vec::new(); // non-pattern numerical order list
+            let mut pattern_no: usize = 0; // pattern numerical order
             let mut input_source: Vec<PathBuf> = Vec::new();
             let mut mode: Vec<Mode> = Vec::new();
 
@@ -123,17 +142,20 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                         }
                     }
 
-                    other_no_list.push(no);
+                    // push non-pattern no to list
+                    non_pattern.push(no);
                 }
 
+                // judge whether args is file or dir and push
                 if PathBuf::from(string).is_file() || PathBuf::from(string).is_dir() {
                     input_source.push(PathBuf::from(string));
-                    other_no_list.push(no);
+                    non_pattern.push(no);
                 }
             }
 
+            // judge pattern site
             for i in 0..vec.len() {
-                if !other_no_list.contains(&i) {
+                if !non_pattern.contains(&i) {
                     pattern_no = i;
                     break; // get first non-option parameter as pattern
                 }
@@ -147,54 +169,17 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
         }
 
         _ => Err(Error::Internal {
-            context: "Not Finished".into(),
+            context: "Non-Support Arguments".into(),
         }),
     }
 }
 
-/// parse arguments pattern
-fn _parse_pattern(args: &[String]) -> Result<String, Error> {
-    let pattern = args[0].clone();
-
-    Ok(pattern)
-}
-
-/// parse input source
-fn _parse_source(args: &[String]) -> Result<Vec<PathBuf>, Error> {
-    let mut path_vec: Vec<PathBuf> = Vec::new();
-
-    if args.len() == 1 {
-        return Ok(path_vec);
-    }
-
-    let input_source = &args[1];
-    let path = PathBuf::from(input_source);
-    path_vec.push(path);
-    Ok(path_vec)
-}
-
-/// parse running mode
-fn _parse_mode(args: &[String]) -> Result<Vec<Mode>, Error> {
-    let mut mode_vec: Vec<Mode> = Vec::new();
-
-    if args.len() < 3 {
-        return Ok(mode_vec);
-    }
-
-    let mode = &args[2];
-    if mode == "-c" {
-        mode_vec.push(Mode::CountOnly);
-    }
-
-    Ok(mode_vec)
-}
-
-/// obtain software version
+// software version
 fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
-/// software help information
+// software help information
 fn help() -> &'static str {
     r#"Usage: 
     cngrep [OPTIONS] <PATTERN> [PATH]
