@@ -10,15 +10,19 @@ use std::process::ExitCode;
 // entry point
 // right return match result else return exit code
 // todo: exit code should design to be, 0123
-// 0 > success, 1 > not found, 2 > args error
-// 3 > IO error
+// 0 > success, 1 > not found, 2 > running error
 fn main() -> ExitCode {
     match run() {
         Ok(_) => ExitCode::from(0),
 
-        Err(e) => {
-            eprintln!("{e}");
+        Err(Error::NotFound(err)) => {
+            eprintln!("{err}");
             ExitCode::from(1)
+        }
+
+        Err(err) => {
+            eprintln!("{err}");
+            ExitCode::from(2)
         }
     }
 }

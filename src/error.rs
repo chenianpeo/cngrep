@@ -72,8 +72,7 @@ pub enum Error {
     Argument(String),
     Io(io::Error),
     Match(String),
-    UTF8(std::str::Utf8Error),
-    Output(String),
+    NotFound(String),
 }
 
 impl std::error::Error for Error {}
@@ -96,10 +95,7 @@ impl std::fmt::Display for Error {
             Error::Match(err) => {
                 write!(f, "{err}")
             }
-            Error::UTF8(err) => {
-                write!(f, "{err}")
-            }
-            Error::Output(err) => {
+            Error::NotFound(err) => {
                 write!(f, "{err}")
             }
         }

@@ -43,7 +43,7 @@ use crate::{cli::Mode, error::Error, reader::ReadResult};
 fn is_matched<T>(r: &[T]) -> Result<(), Error> {
     let not_fount = "Not Found".red();
     if r.is_empty() {
-        return Err(Error::Output(not_fount));
+        return Err(Error::NotFound(not_fount));
     }
 
     Ok(())
@@ -118,7 +118,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
             CountResult::SF(stdin_file) => {
                 if stdin_file == &0 {
                     let not_fount = "Not Found".red();
-                    return Err(Error::Output(not_fount));
+                    return Err(Error::NotFound(not_fount));
                 }
                 println!("{stdin_file}")
             }
@@ -140,7 +140,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
 
                 if total_number == 0 {
                     let not_fount = "Not Found".red();
-                    return Err(Error::Output(not_fount));
+                    return Err(Error::NotFound(not_fount));
                 }
 
                 println!("Total Match Number: {total_number}");
