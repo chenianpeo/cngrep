@@ -38,10 +38,11 @@ impl ParseResult {
         args.remove(0); // remove first no use arg
 
         if args.is_empty() {
-            return Err(Error::InvalidArg {
-                r#type: "arguments".into(),
-                context: "must least 1 arguments".into(),
-            });
+            // return Err(Error::InvalidArg {
+            //     r#type: "arguments".into(),
+            //     context: "must least 1 arguments".into(),
+            // });
+            return Err(Error::Argument("must least 1 arguments".into()));
         }
 
         // judge whether exist special option
@@ -168,9 +169,10 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             })
         }
 
-        _ => Err(Error::Internal {
-            context: "Non-Support Arguments".into(),
-        }),
+        // _ => Err(Error::Internal {
+        //     context: "Non-Support Arguments".into(),
+        // }),
+        _ => Err(Error::Argument("Non-Support Arguments".into())),
     }
 }
 

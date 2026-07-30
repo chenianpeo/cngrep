@@ -1,20 +1,25 @@
+use cg::cli::ParseResult;
 use cg::cli::SpecialArgs;
+use cg::error::Error;
 use cg::matcher::search;
 use cg::printer::render;
 use cg::reader::read;
-use cg::{cli::ParseResult, error::Error};
 
 use std::process::ExitCode;
 
 // entry point
+// right return match result else return exit code
+// todo: exit code should design to be, 0123
+// 0 > success, 1 > not found, 2 > args error
+// 3 > IO error
 fn main() -> ExitCode {
     match run() {
+        Ok(_) => ExitCode::from(0),
+
         Err(e) => {
             eprintln!("{e}");
             ExitCode::from(1)
         }
-
-        Ok(_) => ExitCode::from(0),
     }
 }
 
