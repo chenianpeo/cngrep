@@ -6,7 +6,7 @@ use std::{
 
 use crate::{cli::Mode, error::Error};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ReadResult {
     Stdin,
     File(PathBuf),
@@ -120,4 +120,34 @@ pub fn recursive_dir(dir: &Path, _mode: &[Mode]) -> Result<Vec<PathBuf>, Error> 
     }
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn path_one_file() {
+        let actual = read(
+            &[PathBuf::from("/home/cn/Code/cngrep/content.txt")],
+            &Vec::new(),
+        )
+        .unwrap();
+
+        let expected = ReadResult::File(PathBuf::from("/home/cn/Code/cngrep/content.txt"));
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn path_one_dir() {
+        let actual = read(&[PathBuf::from("/home/cn/Documents")], &Vec::new()).unwrap();
+
+        let expected = ReadResult::MultiFile(vec![
+            PathBuf::from("/home/cn/Documents/test/main.rs"),
+            PathBuf::from("/home/cn/Documents/test.rs"),
+        ]);
+
+        assert_eq!(actual, expected);
+    }
 }
