@@ -2,7 +2,7 @@ use crate::error::Error;
 use std::path::PathBuf;
 
 // Arguments parse struct
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Config {
     pub pattern: String,
     pub input_source: Vec<PathBuf>,
@@ -193,4 +193,64 @@ Arguments:
 Options:
     -c, --CountOnly     Count matches only
     "#
+}
+
+// Unit Test
+// only test one module or one function
+// unit test does not rely on the entire program
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn parse_pattern_only() {
+        let actual = parse_args(&["cngrep".into()]).unwrap();
+
+        let expected = Config {
+            pattern: "cngrep".into(),
+            input_source: vec![],
+            mode: vec![],
+        };
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn parse_pattern_path() {
+        let actual = parse_args(&["cngrep".into(), "/home/cn/Documents".into()]).unwrap();
+
+        let expected = Config {
+            pattern: "cngrep".into(),
+            input_source: vec![PathBuf::from("/home/cn/Documents")],
+            mode: vec![],
+        };
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn parse_pattern_mode() {
+        let actual = parse_args(&["cngrep".into(), "-c".into()]).unwrap();
+
+        let expected = Config {
+            pattern: "cngrep".into(),
+            input_source: vec![],
+            mode: vec![Mode::CountOnly],
+        };
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn parse_path_mode() {
+        let actual = parse_args(&["/home/cn/Documents".into(), "-c".into()]).unwrap();
+
+        let expected = Config {
+            pattern: "".into(),
+            input_source: vec![PathBuf::from("/home/cn/Documents")],
+            mode: vec![Mode::CountOnly],
+        };
+
+        assert_eq!(actual, expected);
+    }
 }
