@@ -125,29 +125,69 @@ pub fn recursive_dir(dir: &Path, _mode: &[Mode]) -> Result<Vec<PathBuf>, Error> 
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
-    #[test]
-    fn path_one_file() {
-        let actual = read(
-            &[PathBuf::from("/home/cn/Code/cngrep/content.txt")],
-            &Vec::new(),
-        )
-        .unwrap();
+    fn create_temp_dir() -> PathBuf {
+        let mut path = std::env::temp_dir();
 
-        let expected = ReadResult::File(PathBuf::from("/home/cn/Code/cngrep/content.txt"));
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
 
-        assert_eq!(actual, expected);
+        path.push(format!("cngrep_test_{}", timestamp));
+
+        fs::create_dir(&path).unwrap();
+
+        path
     }
 
     #[test]
-    fn path_one_dir() {
-        let actual = read(&[PathBuf::from("/home/cn/Documents")], &Vec::new()).unwrap();
+    fn read_one_file() {
+        let dir = create_temp_dir();
+        let file = dir.join("content.txt");
 
-        let expected = ReadResult::MultiFile(vec![
-            PathBuf::from("/home/cn/Documents/test/main.rs"),
-            PathBuf::from("/home/cn/Documents/test.rs"),
-        ]);
+        fs::write(&file, "hello cngrep").unwrap();
+
+        let actual = read(&[file.clone()], &[]).unwrap();
+
+        let expected = ReadResult::File(file);
 
         assert_eq!(actual, expected);
+
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn read_one_dir() {
+        let dir = create_temp_dir();
+
+        let sub_dir = dir.join("test");
+
+        fs::create_dir(&sub_dir).unwrap();
+
+        let file1 = sub_dir.join("test1.txt");
+        let file2 = sub_dir.join("test2.txt");
+
+        fs::write(&file1, "contents").unwrap();
+        fs::write(&file2, "contents").unwrap();
+
+        let actual = read(&[dir.clone()], &[]).unwrap();
+
+        match actual {
+            ReadResult::MultiFile(mut files) => {
+                files.sort();
+
+                let mut expected = vec![file1, file2];
+
+                expected.sort();
+
+                assert_eq!(files, expected);
+            }
+            _ => panic!("expected multi file"),
+        }
+
+        fs::remove_dir_all(dir).unwrap();
     }
 }
