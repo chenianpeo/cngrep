@@ -1,154 +1,272 @@
-/*
-this module is conduct parse and obtain Args
-current stage, arguments parse support 1 to 3 and don't support multiple file
-arguments parse is very weak, support sequence rather than semantic input
-
- */
-
 use crate::error::Error;
 use std::path::PathBuf;
 
-// parse function
-pub fn parse() -> Result<Args, Error> {
-    let input_arg: Vec<String> = std::env::args().collect();
-    let cli = args(input_arg)?;
-    let args = Args::from_cli(cli)?;
-    Ok(args)
+// Arguments parse struct
+#[derive(Debug, PartialEq)]
+pub struct Config {
+    pub pattern: String,
+    pub input_source: Vec<PathBuf>,
+    pub mode: Vec<Mode>,
 }
 
-#[derive(Debug)]
-pub struct Cli {
-    pub query: String,
-    pub file: Option<PathBuf>,
-
-    pub count: bool,
-}
-
-#[derive(Debug)]
-pub struct Args {
-    pub query: String,
-    pub input_source: InputSource,
-    pub mode: Mode,
-}
-
-#[derive(Debug)]
-pub enum InputSource {
-    File(PathBuf),
-    Stdin,
-    Dir,
-}
-
-#[derive(Debug, Clone, Copy)]
+// running parameters
+#[derive(Debug, PartialEq)]
 pub enum Mode {
     Normal,
-    IgnoreCase,
     CountOnly,
 }
 
-// conduct arguments input
-pub fn args(arg: Vec<String>) -> Result<Cli, crate::error::Error> {
-    let mut arg = arg;
-    arg.remove(0);
+// arguments parse result
+#[derive(Debug)]
+pub enum ParseResult {
+    Ok(Config),
+    Special(SpecialArgs),
+}
 
-    let help_info = "HELP".to_string();
+// running special args
+#[derive(Debug)]
+pub enum SpecialArgs {
+    Help(&'static str),
+    Version(&'static str),
+}
 
-    match arg.len() {
-        1 => {
-            if arg[0].clone() == "-h" || arg[0].clone() == "--help" {
-                print!("{}", help_info);
+impl ParseResult {
+    // obtain command line arguments
+    // conduct special arguments like empty or help
+    pub fn build() -> Result<ParseResult, Error> {
+        let mut args: Vec<String> = std::env::args().collect();
+        args.remove(0); // remove first no use arg
+
+        if args.is_empty() {
+            // return Err(Error::InvalidArg {
+            //     r#type: "arguments".into(),
+            //     context: "must least 1 arguments".into(),
+            // });
+            return Err(Error::Argument("must least 1 arguments".into()));
+        }
+
+        // judge whether exist special option
+        for arg in &args {
+            if arg.contains("-h") {
+                return Ok(ParseResult::Special(SpecialArgs::Help(help())));
+            } else if arg.contains("-v") {
+                return Ok(ParseResult::Special(SpecialArgs::Version(version())));
             }
-            Ok(Cli {
-                query: arg[0].clone(),
-                file: None,
-                count: false,
+        }
+
+        // obtain user input arguments and parse return Config
+        let config = parse_args(&args)?;
+
+        Ok(ParseResult::Ok(config))
+    }
+}
+
+// parse arguments
+fn parse_args(vec: &[String]) -> Result<Config, Error> {
+    match vec {
+        // match guard
+        // running code when satisfy condition statement
+        // match one argument, like `cg cngrep`
+        // must be pattern when args number is 1
+        vec if vec.len() == 1 => Ok(Config {
+            pattern: vec[0].clone(),
+            input_source: Vec::<PathBuf>::new(),
+            mode: Vec::<Mode>::new(),
+        }),
+
+        // match two arguments
+        // command like, `cg t -c`, `cg t file`,
+        // support random two args in [pattern] [path] [option]
+        vec if vec.len() == 2 => {
+            let mut pattern_no: usize = 0; // judge pattern site
+            let mut pattern;
+            let mut input_source: Vec<PathBuf> = Vec::new();
+            let mut mode: Vec<Mode> = Vec::new();
+
+            // traversal parameter
+            for (no, string) in vec.iter().enumerate() {
+                // judge input option
+                // later can add "--" like "--help"
+                if string.starts_with('-') {
+                    for i in 1..string.len() {
+                        if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
+                            mode.push(Mode::CountOnly);
+                        }
+                    }
+
+                    // get other argument
+                    // second arg is pattern when first argument is mode
+                    if no == pattern_no {
+                        pattern_no = 1;
+                    }
+                }
+
+                // judge input path
+                if PathBuf::from(string).is_file() || PathBuf::from(string).is_dir() {
+                    input_source.push(PathBuf::from(string));
+
+                    if no == pattern_no {
+                        pattern_no = 1;
+                    }
+                }
+            }
+
+            // obtain input pattern
+            pattern = vec[pattern_no].clone();
+
+            // when not exist pattern in two arguments
+            // default match the entire document
+            if !input_source.is_empty() && !mode.is_empty() {
+                pattern = "".to_string();
+            }
+
+            Ok(Config {
+                pattern,
+                input_source,
+                mode,
             })
         }
 
-        2 => {
-            if arg[0].clone() == "-c" || arg[0].clone() == "--count-only" {
-                Ok(Cli {
-                    query: arg[1].clone(),
-                    file: None,
-                    count: true,
-                })
-            } else if arg[1].clone() == "-c" || arg[1].clone() == "--count-only" {
-                Ok(Cli {
-                    query: arg[0].clone(),
-                    file: None,
-                    count: true,
-                })
-            } else {
-                Ok(Cli {
-                    query: arg[0].clone(),
-                    file: Some(PathBuf::from(&arg[1])),
-                    count: false,
-                })
+        // match three arguments or more
+        // support [pattern] [path] [option]
+        vec if vec.len() >= 3 => {
+            let mut non_pattern: Vec<usize> = Vec::new(); // non-pattern numerical order list
+            let mut pattern_no: usize = 0; // pattern numerical order
+            let mut input_source: Vec<PathBuf> = Vec::new();
+            let mut mode: Vec<Mode> = Vec::new();
+
+            for (no, string) in vec.iter().enumerate() {
+                if string.starts_with('-') {
+                    for i in 1..string.len() {
+                        if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
+                            mode.push(Mode::CountOnly);
+                        }
+                    }
+
+                    // push non-pattern no to list
+                    non_pattern.push(no);
+                }
+
+                // judge whether args is file or dir and push
+                if PathBuf::from(string).is_file() || PathBuf::from(string).is_dir() {
+                    input_source.push(PathBuf::from(string));
+                    non_pattern.push(no);
+                }
             }
+
+            // judge pattern site
+            for i in 0..vec.len() {
+                if !non_pattern.contains(&i) {
+                    pattern_no = i;
+                    break; // get first non-option parameter as pattern
+                }
+            }
+
+            Ok(Config {
+                pattern: vec[pattern_no].clone(),
+                input_source,
+                mode,
+            })
         }
 
-        3 => {
-            if arg[0].clone() == "-c" || arg[0].clone() == "--count-only" {
-                Ok(Cli {
-                    query: arg[1].clone(),
-                    file: Some(PathBuf::from(&arg[2])),
-                    count: true,
-                })
-            } else if arg[2].clone() == "-c" || arg[2].clone() == "--count-only" {
-                Ok(Cli {
-                    query: arg[0].clone(),
-                    file: Some(PathBuf::from(&arg[1])),
-                    count: true,
-                })
-            } else {
-                Err(Error::InvalidArgument {
-                    r#type: "option".to_string(),
-                    reason: help_info,
-                })
-            }
-        }
-
-        _ => Err(Error::InvalidArgument {
-            r#type: "arguments".to_string(),
-            reason: "Command\ncngrep [option] <query> <path>".to_string(),
-        }),
+        // _ => Err(Error::Internal {
+        //     context: "Non-Support Arguments".into(),
+        // }),
+        _ => Err(Error::Argument("Non-Support Arguments".into())),
     }
 }
 
-use std::io::IsTerminal;
+// software version
+fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
 
-// conduct Input source and Input mode.
-impl Args {
-    pub fn from_cli(cli: Cli) -> Result<Self, Error> {
-        let input_source: InputSource = determine_input(&cli)?;
+// software help information
+fn help() -> &'static str {
+    r#"Usage: 
+    cngrep [OPTIONS] <PATTERN> [PATH]
 
-        let mode: Mode = determine_mode(&cli)?;
+Arguments:
+    <PATTERN>   Search pattern
+    [PATH]      File or directory to search
 
-        Ok(Self {
-            query: cli.query,
-            input_source,
-            mode,
-        })
+Options:
+    -c, --CountOnly     Count matches only
+    "#
+}
+
+// Unit Test
+// only test one module or one function
+// unit test does not rely on the entire program
+#[cfg(test)]
+mod test {
+    use std::vec;
+
+    use super::*;
+
+    #[test]
+    fn parse_pattern_only() {
+        let actual = parse_args(&["cngrep".into()]).unwrap();
+
+        let expected = Config {
+            pattern: "cngrep".into(),
+            input_source: vec![],
+            mode: vec![],
+        };
+
+        assert_eq!(actual, expected);
     }
-}
 
-fn determine_input(cli: &Cli) -> Result<InputSource, Error> {
-    let input_source = if let Some(file) = &cli.file {
-        InputSource::File(file.clone())
-    } else if !std::io::stdin().is_terminal() {
-        InputSource::Stdin
-    } else {
-        InputSource::Dir
-    };
+    #[test]
+    fn parse_pattern_path() {
+        let actual = parse_args(&["cngrep".into(), "/home/cn/Documents".into()]).unwrap();
 
-    Ok(input_source)
-}
+        let expected = Config {
+            pattern: "cngrep".into(),
+            input_source: vec![PathBuf::from("/home/cn/Documents")],
+            mode: vec![],
+        };
 
-fn determine_mode(cli: &Cli) -> Result<Mode, Error> {
-    let mode = if cli.count {
-        Mode::CountOnly
-    } else {
-        Mode::Normal
-    };
+        assert_eq!(actual, expected);
+    }
 
-    Ok(mode)
+    #[test]
+    fn parse_pattern_mode() {
+        let actual = parse_args(&["cngrep".into(), "-c".into()]).unwrap();
+
+        let expected = Config {
+            pattern: "cngrep".into(),
+            input_source: vec![],
+            mode: vec![Mode::CountOnly],
+        };
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn parse_path_mode() {
+        let actual = parse_args(&["/home/cn/Documents".into(), "-c".into()]).unwrap();
+
+        let expected = Config {
+            pattern: "".into(),
+            input_source: vec![PathBuf::from("/home/cn/Documents")],
+            mode: vec![Mode::CountOnly],
+        };
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn parse_three_args() {
+        let actual =
+            parse_args(&["cngrep".into(), "-c".into(), "/home/cn/Documents".into()]).unwrap();
+
+        let expected = Config {
+            pattern: "cngrep".into(),
+            input_source: vec![PathBuf::from("/home/cn/Documents")],
+            mode: vec![Mode::CountOnly],
+        };
+
+        assert_eq!(actual, expected);
+    }
 }

@@ -1,72 +1,193 @@
-/*
-this module is read search content
-include single file, stdin, directory and multiple file
-but current stage only support single file and stdin
-*/
+use std::{
+    env,
+    io::IsTerminal,
+    path::{Path, PathBuf},
+};
 
-use crate::cli::{Args, InputSource};
-use crate::error::Error;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::PathBuf;
+use crate::{cli::Mode, error::Error};
 
-#[derive(Debug)]
-pub struct ReadFileResult {
-    pub path: PathBuf,
-    pub result: BufReader<File>,
+#[derive(Debug, PartialEq)]
+pub enum ReadResult {
+    Stdin,
+    File(PathBuf),
+    MultiFile(Vec<PathBuf>),
 }
 
-#[derive(Debug)]
-pub struct ReadStdinResult<'a> {
-    pub result: std::io::StdinLock<'a>,
+pub fn read(input_source: &[PathBuf], _mode: &[Mode]) -> Result<ReadResult, Error> {
+    if input_source.is_empty() {
+        let stdin = std::io::stdin();
+
+        if stdin.is_terminal() {
+            let result = recursive_dir(&env::current_dir()?, _mode)?;
+            Ok(ReadResult::MultiFile(result))
+        } else {
+            Ok(ReadResult::Stdin)
+        }
+    } else if input_source.len() == 1 {
+        if input_source[0].is_dir() {
+            let result = recursive_dir(&input_source[0], _mode)?;
+            Ok(ReadResult::MultiFile(result))
+        } else {
+            Ok(ReadResult::File(input_source[0].clone()))
+        }
+    } else {
+        let result = recursive_path(input_source)?;
+
+        Ok(ReadResult::MultiFile(result))
+    }
 }
 
-#[derive(Debug)]
-pub struct ReadDirResult {
-    pub result: Vec<ReadFileResult>,
-}
+fn recursive_path(path: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
+    let mut result: Vec<PathBuf> = Vec::new();
 
-#[derive(Debug)]
-pub enum ReadResult<'a> {
-    File(ReadFileResult),
-    Stdin(ReadStdinResult<'a>),
-    Dir(ReadDirResult),
-}
+    for path in path {
+        if let Some(path) = path.to_str()
+            && (path.contains(".git") | path.contains("/target"))
+        {
+            continue;
+        }
 
-pub trait ReadSource {
-    fn read(&self) -> Result<ReadResult<'_>, Error>;
-}
+        if matches!(
+            path.extension().and_then(|s| s.to_str()),
+            Some("pdf" | "epub")
+        ) {
+            continue;
+        }
 
-impl ReadSource for Args {
-    fn read(&self) -> Result<ReadResult<'_>, Error> {
-        let input_source = &self.input_source;
+        if path.is_file() {
+            result.push(path.clone());
+        }
 
-        let reader = match input_source {
-            InputSource::File(path) => {
-                let file = File::open(path).map_err(|_| Error::Io {
-                    source: std::io::Error::new(std::io::ErrorKind::NotFound, "file not found"),
-                    context: Some("read file report error".into()),
-                })?;
-                let result = BufReader::new(file);
+        if path.is_dir() {
+            for entry in path.read_dir()? {
+                let entry = entry?;
+                let entry_path = entry.path();
 
-                Ok(ReadResult::File(ReadFileResult {
-                    path: path.to_path_buf(),
-                    result,
-                }))
+                if matches!(
+                    entry_path.extension().and_then(|s| s.to_str()),
+                    Some("pdf" | "epub")
+                ) {
+                    continue;
+                }
+
+                if entry_path.is_file() {
+                    result.push(entry_path.clone());
+                }
+
+                if entry_path.is_dir() {
+                    let sub_path = recursive_path(&[entry_path])?;
+                    result.extend(sub_path);
+                }
             }
+        }
+    }
 
-            InputSource::Stdin => {
-                let buf = std::io::stdin();
-                let result = buf.lock();
+    Ok(result)
+}
 
-                Ok(ReadResult::Stdin(ReadStdinResult { result }))
+pub fn recursive_dir(dir: &Path, _mode: &[Mode]) -> Result<Vec<PathBuf>, Error> {
+    let mut result: Vec<PathBuf> = Vec::new();
+
+    for entry in dir.read_dir()? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if let Some(path) = path.to_str()
+            && (path.contains(".git") | path.contains("/target"))
+        {
+            continue;
+        }
+
+        if path.is_dir() {
+            for file in recursive_dir(&path, _mode)? {
+                result.push(file);
             }
+            continue;
+        }
 
-            InputSource::Dir => Err(Error::Internal {
-                message: "Read Dir Unfinished".to_string(),
-            }),
-        }?;
+        if !path.is_file() {
+            continue;
+        }
 
-        Ok(reader)
+        if matches!(
+            path.extension().and_then(|s| s.to_str()),
+            Some("pdf" | "epub")
+        ) {
+            continue;
+        }
+
+        result.push(path);
+    }
+
+    Ok(result)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn create_temp_dir() -> PathBuf {
+        let mut path = std::env::temp_dir();
+
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+
+        path.push(format!("cngrep_test_{}", timestamp));
+
+        fs::create_dir(&path).unwrap();
+
+        path
+    }
+
+    #[test]
+    fn read_one_file() {
+        let dir = create_temp_dir();
+        let file = dir.join("content.txt");
+
+        fs::write(&file, "hello cngrep").unwrap();
+
+        let actual = read(&[file.clone()], &[]).unwrap();
+
+        let expected = ReadResult::File(file);
+
+        assert_eq!(actual, expected);
+
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn read_one_dir() {
+        let dir = create_temp_dir();
+
+        let sub_dir = dir.join("test");
+
+        fs::create_dir(&sub_dir).unwrap();
+
+        let file1 = sub_dir.join("test1.txt");
+        let file2 = sub_dir.join("test2.txt");
+
+        fs::write(&file1, "contents").unwrap();
+        fs::write(&file2, "contents").unwrap();
+
+        let actual = read(&[dir.clone()], &[]).unwrap();
+
+        match actual {
+            ReadResult::MultiFile(mut files) => {
+                files.sort();
+
+                let mut expected = vec![file1, file2];
+
+                expected.sort();
+
+                assert_eq!(files, expected);
+            }
+            _ => panic!("expected multi file"),
+        }
+
+        fs::remove_dir_all(dir).unwrap();
     }
 }

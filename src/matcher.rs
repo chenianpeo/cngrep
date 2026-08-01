@@ -1,71 +1,184 @@
-/*
-this module is match search result
-obtain result by match query and content line
-current stage, don't support anything mode
-need optimize from the beginning
- */
+use std::{
+    fs::File,
+    io::{BufRead, BufReader, Stdin},
+    path::PathBuf,
+};
 
-use std::io::{BufRead, Read};
+use crate::{
+    cli::Mode,
+    error::Error,
+    printer::{
+        CountMultiFile, CountResult, MatchMultiFile, MatchStdinFile,
+        NormalResult::{self},
+        SearchResult,
+    },
+    reader::ReadResult,
+};
 
-use crate::cli::Mode;
-use crate::error::Error;
-use crate::result::{FileMatch, StdinMatch};
-use crate::{reader::ReadResult, result::MatchResult};
+pub fn search(
+    pattern: &str,
+    read_result: &ReadResult,
+    mode: &[Mode],
+) -> Result<SearchResult, Error> {
+    let result: SearchResult = match read_result {
+        ReadResult::Stdin => {
+            let stdin = std::io::stdin();
 
-#[derive(Debug)]
-pub struct NeedMatch<'a> {
-    pub query: String,
-    pub mode: Mode,
-    pub content: ReadResult<'a>,
-}
-
-pub trait Match {
-    fn search(&mut self) -> Result<MatchResult, Error>;
-}
-
-impl<'a> Match for NeedMatch<'a> {
-    fn search(&mut self) -> Result<MatchResult, Error> {
-        let query = &self.query;
-
-        let result = match &mut self.content {
-            ReadResult::File(file) => {
-                let mut match_result: Vec<FileMatch> = Vec::new();
-
-                for (line_no, line) in file.result.by_ref().lines().enumerate() {
-                    let line = line?;
-                    let line_no = line_no + 1;
-
-                    if line.contains(query) {
-                        match_result.push(FileMatch {
-                            path: file.path.to_path_buf(),
-                            line_no,
-                            content: line,
-                        });
-                    }
-                }
-
-                Ok(MatchResult::File(match_result))
+            if mode.contains(&Mode::CountOnly) {
+                return stdin.count_search(pattern);
             }
 
-            ReadResult::Stdin(file) => {
-                let mut match_result: Vec<StdinMatch> = Vec::new();
+            stdin.normal_search(pattern)?
+        }
 
-                for line in file.result.by_ref().lines() {
-                    let line = line?;
-
-                    if line.contains(query) {
-                        match_result.push(StdinMatch { content: line });
-                    }
-                }
-
-                Ok(MatchResult::Stdin(match_result))
+        ReadResult::File(file) => {
+            if mode.contains(&Mode::CountOnly) {
+                return file.count_search(pattern);
             }
 
-            ReadResult::Dir(_) => Err(Error::Internal {
-                message: "Search Dir Unfinished".into(),
-            }),
-        }?;
+            file.normal_search(pattern)?
+        }
 
-        Ok(result)
+        ReadResult::MultiFile(multi_file) => {
+            if mode.contains(&Mode::CountOnly) {
+                return multi_file.count_search(pattern);
+            }
+
+            multi_file.normal_search(pattern)?
+        }
+    };
+
+    Ok(result)
+}
+
+pub trait MatchSearch {
+    fn normal_search(&self, pattern: &str) -> Result<SearchResult, Error>;
+    fn count_search(&self, pattern: &str) -> Result<SearchResult, Error>;
+}
+
+fn open_file(path: &PathBuf) -> Result<BufReader<File>, Error> {
+    let file = File::open(path)?;
+    Ok(BufReader::new(file))
+}
+
+impl MatchSearch for Stdin {
+    fn normal_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut match_result: Vec<MatchStdinFile> = Vec::new();
+        let stdin_lock = self.lock();
+
+        for (line_no, line) in stdin_lock.lines().enumerate() {
+            let line = line?;
+
+            if line.contains(pattern) {
+                match_result.push(MatchStdinFile {
+                    line_no,
+                    content: line,
+                });
+            }
+        }
+
+        Ok(SearchResult::Normal(NormalResult::SF(match_result)))
+    }
+
+    fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut match_number: usize = 0;
+        let stdin_lock = self.lock();
+
+        for line in stdin_lock.lines() {
+            if line?.contains(pattern) {
+                match_number += 1;
+            }
+        }
+
+        Ok(SearchResult::Count(CountResult::SF(match_number)))
+    }
+}
+
+impl MatchSearch for PathBuf {
+    fn normal_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut match_result: Vec<MatchStdinFile> = Vec::new();
+
+        let content = open_file(self)?;
+
+        for (line_no, line) in content.lines().enumerate() {
+            let line = line?;
+            if line.contains(pattern) {
+                match_result.push(MatchStdinFile {
+                    line_no,
+                    content: line,
+                });
+            }
+        }
+
+        Ok(SearchResult::Normal(NormalResult::SF(match_result)))
+    }
+
+    fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut match_number: usize = 0;
+
+        let content = open_file(self)?;
+
+        for line in content.lines() {
+            if line?.contains(pattern) {
+                match_number += 1;
+            }
+        }
+
+        Ok(SearchResult::Count(CountResult::SF(match_number)))
+    }
+}
+
+impl MatchSearch for Vec<PathBuf> {
+    fn normal_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut dir_match_result: Vec<MatchMultiFile> = Vec::new();
+
+        for single_file in self {
+            let mut file_match_result: Vec<MatchStdinFile> = Vec::new();
+
+            let content = open_file(single_file)?;
+
+            for (line_no, line) in content.lines().enumerate() {
+                let line = line?;
+
+                if line.contains(pattern) {
+                    file_match_result.push(MatchStdinFile {
+                        line_no,
+                        content: line,
+                    });
+                }
+            }
+
+            if !file_match_result.is_empty() {
+                dir_match_result.push(MatchMultiFile {
+                    path: single_file.canonicalize()?,
+                    file: file_match_result,
+                });
+            }
+        }
+
+        Ok(SearchResult::Normal(NormalResult::MF(dir_match_result)))
+    }
+
+    fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
+        let mut dir_match: Vec<CountMultiFile> = Vec::new();
+
+        for single_file in self {
+            let mut file_match_number: usize = 0;
+
+            let content = open_file(single_file)?;
+
+            for line in content.lines() {
+                if line?.contains(pattern) {
+                    file_match_number += 1;
+                }
+            }
+
+            dir_match.push(CountMultiFile {
+                path: single_file.to_path_buf(),
+                number: file_match_number,
+            });
+        }
+
+        Ok(SearchResult::Count(CountResult::MF(dir_match)))
     }
 }
