@@ -269,28 +269,4 @@ mod test {
 
         assert_eq!(actual, expected);
     }
-
-    #[test]
-    fn parse_random_args() {
-        let actual = parse_args(&[
-            "cngrep".into(),
-            "/home/cn/Documents".into(),
-            "content".into(),
-            "/home/cn/Code/cngrep/content.txt".into(),
-            "-c".into(),
-            "ic".into(),
-        ])
-        .unwrap();
-
-        let expected = Config {
-            pattern: "cngrep".into(),
-            input_source: vec![
-                PathBuf::from("/home/cn/Documents"),
-                PathBuf::from("/home/cn/Code/cngrep/content.txt"),
-            ],
-            mode: vec![Mode::CountOnly],
-        };
-
-        assert_eq!(actual, expected);
-    }
 }

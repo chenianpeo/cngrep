@@ -1,12 +1,1 @@
 /target
-
-bigfile_20m.txt
-bigfile_40m.txt
-bigfile_80m.txt
-
-content.txt
-empty.txt
-
-perf.data
-perf.data.old
-flamegraph.svg
