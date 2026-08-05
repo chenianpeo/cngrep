@@ -183,16 +183,7 @@ fn version() -> &'static str {
 
 // software help information
 fn help() -> &'static str {
-    r#"Usage: 
-    cngrep [OPTIONS] <PATTERN> [PATH]
-
-Arguments:
-    <PATTERN>   Search pattern
-    [PATH]      File or directory to search
-
-Options:
-    -c, --CountOnly     Count matches only
-    "#
+    include_str!("../docs/help.txt")
 }
 
 // Unit Test

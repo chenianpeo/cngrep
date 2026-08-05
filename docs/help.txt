@@ -1,0 +1,9 @@
+Usage:
+    cngrep [OPTIONS] <PATTERN> [PATH]
+
+Arguments:
+    <PATTERN>   Search pattern
+    [PATH]      File or directory to search
+
+Options:
+    -c, --CountOnly     Count matches only
