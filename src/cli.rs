@@ -14,6 +14,7 @@ pub struct Config {
 pub enum Mode {
     Normal,
     CountOnly,
+    OutputFile(PathBuf),
 }
 
 // arguments parse result
@@ -92,6 +93,14 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                         if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
                             mode.push(Mode::CountOnly);
                         }
+
+                        // if Some('o') == string.chars().nth(i) && !mode.contains(&Mode::OutputFile) {
+                        //     let output_file = PathBuf::from(vec[no].clone());
+
+                        //     if output_file.is_file() {
+                        //         mode.push(Mode::OutputFile);
+                        //     }
+                        // }
                     }
 
                     // get other argument
@@ -134,6 +143,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             let mut pattern_no: usize = 0; // pattern numerical order
             let mut input_source: Vec<PathBuf> = Vec::new();
             let mut mode: Vec<Mode> = Vec::new();
+            let mut o_flag = 0;
 
             for (no, string) in vec.iter().enumerate() {
                 if string.starts_with('-') {
@@ -141,10 +151,29 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                         if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
                             mode.push(Mode::CountOnly);
                         }
+
+                        let output_file = PathBuf::new();
+
+                        if Some('o') == string.chars().nth(i)
+                            && !mode.contains(&Mode::OutputFile(output_file))
+                        {
+                            let output_file = PathBuf::from(vec[no + 1].clone());
+                            println!("{:?}", output_file);
+
+                            if output_file.is_file() {
+                                o_flag = no + 1;
+                                mode.push(Mode::OutputFile(output_file));
+                            }
+                        }
                     }
 
                     // push non-pattern no to list
                     non_pattern.push(no);
+                }
+
+                if no == o_flag {
+                    non_pattern.push(no);
+                    continue;
                 }
 
                 // judge whether args is file or dir and push
