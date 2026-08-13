@@ -12,8 +12,7 @@ use std::process::ExitCode;
 // todo: exit code should design to be, 0123
 // 0 > success, 1 > not found, 2 > running error
 fn main() -> ExitCode {
-    let file = cg::os::file::File::open("/home/cn/Code/cngrep/README.md").unwrap();
-    println!("{:?}", file);
+    let _file = cg::os::file::File::open("/home/cn/Code/cngrep/README.md").unwrap();
 
     match run() {
         Ok(_) => ExitCode::from(0),
@@ -48,6 +47,7 @@ fn run() -> Result<(), Error> {
             return Ok(());
         }
     };
+    println!("{:?}", args);
 
     // obtain input source path
     let read_result = read(&args.input_source, &args.mode)?;

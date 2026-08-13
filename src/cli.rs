@@ -1,5 +1,5 @@
 use crate::error::Error;
-use std::path::PathBuf;
+use std::{fs::File, path::PathBuf};
 
 // Arguments parse struct
 #[derive(Debug, PartialEq)]
@@ -158,7 +158,12 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                             && !mode.contains(&Mode::OutputFile(output_file))
                         {
                             let output_file = PathBuf::from(vec[no + 1].clone());
-                            println!("{:?}", output_file);
+
+                            if !output_file.exists() {
+                                File::create(&output_file)?;
+                                o_flag = no + 1;
+                                mode.push(Mode::OutputFile(output_file.clone()));
+                            }
 
                             if output_file.is_file() {
                                 o_flag = no + 1;
