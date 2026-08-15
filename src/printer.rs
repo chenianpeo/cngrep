@@ -42,6 +42,7 @@ use crate::{cli::Mode, error::Error, reader::ReadResult};
 
 fn is_matched<T>(r: &[T]) -> Result<(), Error> {
     let not_fount = "Not Found".red();
+
     if r.is_empty() {
         return Err(Error::NotFound(not_fount));
     }
@@ -95,12 +96,6 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                     is_matched(file_result)?;
 
                     for file in file_result {
-                        // println!(
-                        //     "{}:{}",
-                        //     (file.line_no + 1).blue(),
-                        //     file.content.replace(_pattern, &_pattern.green())
-                        // );
-
                         writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
                     }
                 }
@@ -109,18 +104,14 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                     is_matched(dir_result)?;
 
                     for (dir_no, dir) in dir_result.iter().enumerate() {
-                        println!("{}", dir.path.display().yellow());
+                        writeln!(output_file, "{}", dir.path.display())?;
 
                         for file in dir.file.iter() {
-                            println!(
-                                "{}:{}",
-                                (file.line_no + 1).blue(),
-                                file.content.replace(_pattern, &_pattern.green())
-                            );
+                            writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
                         }
 
                         if dir_no != dir_result.len() - 1 {
-                            println!();
+                            writeln!(output_file)?;
                         }
                     }
                 }
@@ -131,8 +122,9 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                     if stdin_file == &0 {
                         let not_fount = "Not Found".red();
                         return Err(Error::NotFound(not_fount));
+                    } else {
+                        writeln!(output_file, "{stdin_file}")?;
                     }
-                    println!("{stdin_file}")
                 }
 
                 CountResult::MF(multi_file) => {
@@ -141,12 +133,6 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                     for single_file in multi_file {
                         if single_file.number != 0 {
                             total_number += single_file.number;
-
-                            // println!(
-                            //     "{}: {}",
-                            //     single_file.path.display().yellow(),
-                            //     single_file.number
-                            // );
                             writeln!(
                                 output_file,
                                 "{}:{}",
@@ -161,7 +147,6 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                         return Err(Error::NotFound(not_fount));
                     }
 
-                    // println!("Total Match Number: {total_number}");
                     writeln!(output_file, "Total Match Number: {total_number}")?;
                 }
             },
