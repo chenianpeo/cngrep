@@ -13,24 +13,29 @@ pub enum ReadResult {
     MultiFile(Vec<PathBuf>),
 }
 
-pub fn read(input_source: &[PathBuf], _mode: &[ReadOptions]) -> Result<ReadResult, Error> {
+pub fn read(input_source: &[PathBuf], mode: &[ReadOptions]) -> Result<ReadResult, Error> {
+    // stdin or current directory
     if input_source.is_empty() {
         let stdin = std::io::stdin();
 
         if stdin.is_terminal() {
-            let result = recursive_dir(&env::current_dir()?, _mode)?;
+            let result = recursive_dir(&env::current_dir()?, mode)?;
             Ok(ReadResult::MultiFile(result))
         } else {
             Ok(ReadResult::Stdin)
         }
-    } else if input_source.len() == 1 {
+    }
+    // single file or directory
+    else if input_source.len() == 1 {
         if input_source[0].is_dir() {
-            let result = recursive_dir(&input_source[0], _mode)?;
+            let result = recursive_dir(&input_source[0], mode)?;
             Ok(ReadResult::MultiFile(result))
         } else {
             Ok(ReadResult::File(input_source[0].clone()))
         }
-    } else {
+    }
+    // multiple file or directory
+    else {
         let result = recursive_path(input_source)?;
 
         Ok(ReadResult::MultiFile(result))
@@ -40,18 +45,22 @@ pub fn read(input_source: &[PathBuf], _mode: &[ReadOptions]) -> Result<ReadResul
 fn recursive_path(path: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
 
-    for path in path {
-        if let Some(path) = path.to_str()
-            && (path.contains(".git") | path.contains("/target"))
-        {
-            continue;
-        }
+    'outer: for path in path {
+        let path_str = path.to_str().ok_or(Error::NotFound("NotFound".into()))?;
+        let path_single_str: Vec<&str> = path_str.split('/').collect();
 
-        if matches!(
-            path.extension().and_then(|s| s.to_str()),
-            Some("pdf" | "epub")
-        ) {
-            continue;
+        for single_str in path_single_str {
+            if single_str.starts_with('.') {
+                continue 'outer;
+            }
+
+            if single_str.contains("target") {
+                continue 'outer;
+            }
+
+            if single_str.ends_with(".pdf") || single_str.ends_with(".epub") {
+                continue 'outer;
+            }
         }
 
         if path.is_file() {
@@ -88,15 +97,34 @@ fn recursive_path(path: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
 pub fn recursive_dir(dir: &Path, _mode: &[ReadOptions]) -> Result<Vec<PathBuf>, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
 
-    for entry in dir.read_dir()? {
+    'outer: for entry in dir.read_dir()? {
         let entry = entry?;
         let path = entry.path();
 
-        if let Some(path) = path.to_str()
-            && (path.contains(".git") | path.contains("/target"))
-        {
-            continue;
+        let path_str = path.to_str().ok_or(Error::NotFound("NotFound".into()))?;
+        let path_single_str: Vec<&str> = path_str.split('/').collect();
+
+        for single_str in path_single_str {
+            if single_str.starts_with('.') {
+                continue 'outer;
+            }
+
+            if single_str.contains("target") {
+                continue 'outer;
+            }
+
+            if single_str.ends_with(".pdf") || single_str.ends_with(".epub") {
+                continue 'outer;
+            }
         }
+
+        // println!("{:?}", path);
+
+        // if let Some(path) = path.to_str()
+        //     && (path.contains(".git") | path.contains("/target"))
+        // {
+        //     continue;
+        // }
 
         if path.is_dir() {
             for file in recursive_dir(&path, _mode)? {
@@ -109,12 +137,12 @@ pub fn recursive_dir(dir: &Path, _mode: &[ReadOptions]) -> Result<Vec<PathBuf>, 
             continue;
         }
 
-        if matches!(
-            path.extension().and_then(|s| s.to_str()),
-            Some("pdf" | "epub")
-        ) {
-            continue;
-        }
+        // if matches!(
+        //     path.extension().and_then(|s| s.to_str()),
+        //     Some("pdf" | "epub")
+        // ) {
+        //     continue;
+        // }
 
         result.push(path);
     }
