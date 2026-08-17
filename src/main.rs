@@ -47,16 +47,16 @@ fn run() -> Result<(), Error> {
             return Ok(());
         }
     };
-    println!("{:?}", args);
+    // println!("{:?}", args);
 
     // obtain input source path
-    let read_result = read(&args.input_source, &args.mode)?;
+    let read_result = read(&args.input_source, &args.read_options)?;
 
     // match pattern according to mode
-    let search_result = search(&args.pattern, &read_result, &args.mode)?;
+    let search_result = search(&args.pattern, &read_result, &args.match_options)?;
 
     // render and print match result
-    render(&args.pattern, &search_result, &args.mode)?;
+    render(&args.pattern, &search_result, &args.output_options)?;
 
     Ok(())
 }

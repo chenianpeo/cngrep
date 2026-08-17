@@ -10,14 +10,14 @@ pub enum SearchResult {
 
 #[derive(Debug)]
 pub enum NormalResult {
-    SF(Vec<MatchStdinFile>), // stdin and single file
-    MF(Vec<MatchMultiFile>), // multiple file and dir
+    StdinFile(Vec<MatchStdinFile>), // stdin and single file
+    MultiFile(Vec<MatchMultiFile>), // multiple file and dir
 }
 
 #[derive(Debug)]
 pub enum CountResult {
-    SF(usize),
-    MF(Vec<CountMultiFile>),
+    StdinFile(usize),
+    MultiFile(Vec<CountMultiFile>),
 }
 
 #[derive(Debug)]
@@ -38,7 +38,8 @@ pub struct CountMultiFile {
     pub number: usize,
 }
 
-use crate::{cli::Mode, error::Error, reader::ReadResult};
+use crate::cli::OutputOptions;
+use crate::error::Error;
 
 fn is_matched<T>(r: &[T]) -> Result<(), Error> {
     let not_fount = "Not Found".red();
@@ -75,15 +76,15 @@ pub trait Color: Display {
 
 impl<T: Display> Color for T {}
 
-pub trait Print {
-    fn new(read_result: &ReadResult) -> Self;
-}
+// pub trait Print {
+//     fn new(read_result: &ReadResult) -> Self;
+// }
 
 // output result
-pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(), Error> {
+pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> Result<(), Error> {
     // output result to file
-    let output_file = _mode.iter().find_map(|mode| match mode {
-        Mode::OutputFile(path) => Some(path),
+    let output_file = mode.iter().find_map(|mode| match mode {
+        OutputOptions::OutputFile(path) => Some(path),
         _ => None,
     });
 
@@ -92,7 +93,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
 
         match result {
             SearchResult::Normal(normal_result) => match normal_result {
-                NormalResult::SF(file_result) => {
+                NormalResult::StdinFile(file_result) => {
                     is_matched(file_result)?;
 
                     for file in file_result {
@@ -100,7 +101,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                     }
                 }
 
-                NormalResult::MF(dir_result) => {
+                NormalResult::MultiFile(dir_result) => {
                     is_matched(dir_result)?;
 
                     for (dir_no, dir) in dir_result.iter().enumerate() {
@@ -118,7 +119,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
             },
 
             SearchResult::Count(count_result) => match count_result {
-                CountResult::SF(stdin_file) => {
+                CountResult::StdinFile(stdin_file) => {
                     if stdin_file == &0 {
                         let not_fount = "Not Found".red();
                         return Err(Error::NotFound(not_fount));
@@ -127,7 +128,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                     }
                 }
 
-                CountResult::MF(multi_file) => {
+                CountResult::MultiFile(multi_file) => {
                     let mut total_number: usize = 0;
 
                     for single_file in multi_file {
@@ -155,19 +156,19 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
         // output result to terminal
         match result {
             SearchResult::Normal(normal_result) => match normal_result {
-                NormalResult::SF(file_result) => {
+                NormalResult::StdinFile(file_result) => {
                     is_matched(file_result)?;
 
                     for file in file_result {
                         println!(
                             "{}:{}",
                             (file.line_no + 1).blue(),
-                            file.content.replace(_pattern, &_pattern.green())
+                            file.content.replace(pattern, &pattern.green())
                         );
                     }
                 }
 
-                NormalResult::MF(dir_result) => {
+                NormalResult::MultiFile(dir_result) => {
                     is_matched(dir_result)?;
 
                     for (dir_no, dir) in dir_result.iter().enumerate() {
@@ -177,7 +178,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                             println!(
                                 "{}:{}",
                                 (file.line_no + 1).blue(),
-                                file.content.replace(_pattern, &_pattern.green())
+                                file.content.replace(pattern, &pattern.green())
                             );
                         }
 
@@ -189,7 +190,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
             },
 
             SearchResult::Count(count_result) => match count_result {
-                CountResult::SF(stdin_file) => {
+                CountResult::StdinFile(stdin_file) => {
                     if stdin_file == &0 {
                         let not_fount = "Not Found".red();
                         return Err(Error::NotFound(not_fount));
@@ -197,7 +198,7 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
                     println!("{stdin_file}")
                 }
 
-                CountResult::MF(multi_file) => {
+                CountResult::MultiFile(multi_file) => {
                     let mut total_number: usize = 0;
 
                     for single_file in multi_file {
@@ -225,3 +226,13 @@ pub fn render(_pattern: &str, result: &SearchResult, _mode: &[Mode]) -> Result<(
 
     Ok(())
 }
+
+// fn print<T>(r: &[T]) -> Result<(), Error> {
+
+//     Ok(())
+// }
+
+// fn write<T>(r: T) -> Result<(), Error> {
+
+//     Ok(())
+// }
