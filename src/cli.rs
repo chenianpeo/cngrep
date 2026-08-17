@@ -9,7 +9,7 @@ pub struct Config {
     pub read_options: Vec<ReadOptions>,
     pub match_options: Vec<MatchOptions>,
     pub output_options: Vec<OutputOptions>,
-    pub other_options: Vec<OtherOptions>,
+    pub special_options: Vec<SpecialOptions>,
 }
 
 #[derive(Default, Debug, PartialEq)]
@@ -36,7 +36,7 @@ pub enum OutputOptions {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum OtherOptions {}
+pub enum SpecialOptions {}
 
 // arguments parse result
 #[derive(Debug)]
@@ -65,9 +65,11 @@ impl ParseResult {
 
         // judge whether exist special option
         for arg in &args {
-            if arg.contains("-h") {
+            if arg == "-h" || arg == "--help" {
                 return Ok(ParseResult::Special(SpecialArgs::Help(help())));
-            } else if arg.contains("-v") {
+            }
+
+            if arg == "-v" || arg == "--version" {
                 return Ok(ParseResult::Special(SpecialArgs::Version(version())));
             }
         }
@@ -92,7 +94,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             read_options: vec![],
             match_options: vec![],
             output_options: vec![],
-            other_options: vec![],
+            special_options: vec![],
         }),
 
         // match two arguments
@@ -107,7 +109,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             let read_options: Vec<ReadOptions> = Vec::new();
             let mut match_options: Vec<MatchOptions> = Vec::new();
             let output_options: Vec<OutputOptions> = Vec::new();
-            let other_options: Vec<OtherOptions> = Vec::new();
+            let other_options: Vec<SpecialOptions> = Vec::new();
 
             // traversal parameter
             for (no, string) in vec.iter().enumerate() {
@@ -159,7 +161,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                 read_options,
                 match_options,
                 output_options,
-                other_options,
+                special_options: other_options,
             })
         }
 
@@ -176,7 +178,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             let read_options: Vec<ReadOptions> = Vec::new();
             let mut match_options: Vec<MatchOptions> = Vec::new();
             let mut output_options: Vec<OutputOptions> = Vec::new();
-            let other_options: Vec<OtherOptions> = Vec::new();
+            let other_options: Vec<SpecialOptions> = Vec::new();
 
             for (no, string) in vec.iter().enumerate() {
                 if string.starts_with('-') {
@@ -237,7 +239,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                 read_options,
                 match_options,
                 output_options,
-                other_options,
+                special_options: other_options,
             })
         }
 
@@ -274,7 +276,7 @@ mod test {
             read_options: vec![],
             match_options: vec![],
             output_options: vec![],
-            other_options: vec![],
+            special_options: vec![],
         };
 
         assert_eq!(actual, expected);
@@ -290,7 +292,7 @@ mod test {
             read_options: vec![],
             match_options: vec![],
             output_options: vec![],
-            other_options: vec![],
+            special_options: vec![],
         };
 
         assert_eq!(actual, expected);
@@ -306,7 +308,7 @@ mod test {
             read_options: vec![],
             match_options: vec![MatchOptions::CountOnly],
             output_options: vec![],
-            other_options: vec![],
+            special_options: vec![],
         };
 
         assert_eq!(actual, expected);
@@ -322,7 +324,7 @@ mod test {
             read_options: vec![],
             match_options: vec![MatchOptions::CountOnly],
             output_options: vec![],
-            other_options: vec![],
+            special_options: vec![],
         };
 
         assert_eq!(actual, expected);
@@ -339,7 +341,7 @@ mod test {
             read_options: vec![],
             match_options: vec![MatchOptions::CountOnly],
             output_options: vec![],
-            other_options: vec![],
+            special_options: vec![],
         };
 
         assert_eq!(actual, expected);
