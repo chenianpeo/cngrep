@@ -1,4 +1,4 @@
-use std::{env, io::IsTerminal, path::PathBuf};
+use std::{env, fs::read_dir, io::IsTerminal, path::PathBuf};
 
 use crate::{cli::ReadOptions, error::Error};
 
@@ -36,52 +36,51 @@ pub fn read(input_source: &[PathBuf], _mode: &[ReadOptions]) -> Result<ReadResul
     }
 }
 
-fn recursive_path(path: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
+// simple recursive path and include ignore file or directory
+// it needs to be separated ignore part later on
+fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
 
-    'outer: for path in path {
-        let path_str = path.to_str().ok_or(Error::NotFound("NotFound".into()))?;
-        let path_single_str: Vec<&str> = path_str.split('/').collect();
-
-        // ignore file or directory
-        for single_str in path_single_str {
-            if single_str.starts_with('.') {
-                continue 'outer;
-            }
-
-            if single_str.contains("target") {
-                continue 'outer;
-            }
-
-            if single_str.ends_with(".pdf") || single_str.ends_with(".epub") {
-                continue 'outer;
-            }
-        }
-
+    for path in paths {
         if path.is_file() {
+            let path_str = path.to_str().ok_or(Error::NotFound("NotFound".into()))?;
+
+            if path_str.ends_with(".pdf")
+                || path_str.ends_with(".epub")
+                || path_str.ends_with(".png")
+                || path_str.ends_with(".xls")
+            {
+                continue;
+            }
+
             result.push(path.clone());
+
+            continue;
         }
 
         if path.is_dir() {
-            for entry in path.read_dir()? {
+            let dir_path = read_dir(path)?;
+
+            'inner: for entry in dir_path {
                 let entry = entry?;
-                let entry_path = entry.path();
+                let single_path = entry.path();
 
-                if matches!(
-                    entry_path.extension().and_then(|s| s.to_str()),
-                    Some("pdf" | "epub")
-                ) {
-                    continue;
+                let path_str = single_path
+                    .to_str()
+                    .ok_or(Error::NotFound("NotFound".into()))?;
+                let path_single_str: Vec<&str> = path_str.split('/').collect();
+
+                for single_str in path_single_str {
+                    if single_str.starts_with('.') {
+                        continue 'inner;
+                    }
+
+                    if single_str.contains("target") {
+                        continue 'inner;
+                    }
                 }
 
-                if entry_path.is_file() {
-                    result.push(entry_path.clone());
-                }
-
-                if entry_path.is_dir() {
-                    let sub_path = recursive_path(&[entry_path])?;
-                    result.extend(sub_path);
-                }
+                result.extend(recursive_path(&[single_path])?);
             }
         }
     }
