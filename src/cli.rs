@@ -6,19 +6,10 @@ use std::{fs::File, path::PathBuf};
 pub struct Config {
     pub pattern: String,
     pub input_source: Vec<PathBuf>,
-    pub mode: Vec<Mode>,
     pub read_options: Vec<ReadOptions>,
     pub match_options: Vec<MatchOptions>,
     pub output_options: Vec<OutputOptions>,
     pub other_options: Vec<OtherOptions>,
-}
-
-// running parameters
-#[derive(Debug, PartialEq)]
-pub enum Mode {
-    Normal,
-    CountOnly,
-    OutputFile(PathBuf),
 }
 
 #[derive(Default, Debug, PartialEq)]
@@ -69,10 +60,6 @@ impl ParseResult {
         args.remove(0); // remove first no use arg
 
         if args.is_empty() {
-            // return Err(Error::InvalidArg {
-            //     r#type: "arguments".into(),
-            //     context: "must least 1 arguments".into(),
-            // });
             return Err(Error::Argument("must least 1 arguments".into()));
         }
 
@@ -102,7 +89,6 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
         vec if vec.len() == 1 => Ok(Config {
             pattern: vec[0].clone(),
             input_source: Vec::<PathBuf>::new(),
-            mode: Vec::<Mode>::new(),
             read_options: vec![],
             match_options: vec![],
             output_options: vec![],
@@ -117,7 +103,6 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             let mut pattern;
 
             let mut input_source: Vec<PathBuf> = Vec::new();
-            let mut mode: Vec<Mode> = Vec::new();
 
             let read_options: Vec<ReadOptions> = Vec::new();
             let mut match_options: Vec<MatchOptions> = Vec::new();
@@ -130,8 +115,9 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                 // later can add "--" like "--help"
                 if string.starts_with('-') {
                     for i in 1..string.len() {
-                        if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
-                            mode.push(Mode::CountOnly);
+                        if Some('c') == string.chars().nth(i)
+                            && !match_options.contains(&MatchOptions::CountOnly)
+                        {
                             match_options.push(MatchOptions::CountOnly);
                         }
                     }
@@ -158,14 +144,18 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
 
             // when not exist pattern in two arguments
             // default match the entire document
-            if !input_source.is_empty() && !mode.is_empty() {
+            if !input_source.is_empty()
+                && (!read_options.is_empty()
+                    || !match_options.is_empty()
+                    || !output_options.is_empty()
+                    || !other_options.is_empty())
+            {
                 pattern = "".to_string();
             }
 
             Ok(Config {
                 pattern,
                 input_source,
-                mode,
                 read_options,
                 match_options,
                 output_options,
@@ -180,7 +170,6 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             let mut pattern_no: usize = 0; // pattern numerical order
 
             let mut input_source: Vec<PathBuf> = Vec::new();
-            let mut mode: Vec<Mode> = Vec::new();
 
             let mut o_flag = 0;
 
@@ -192,15 +181,15 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             for (no, string) in vec.iter().enumerate() {
                 if string.starts_with('-') {
                     for i in 1..string.len() {
-                        if Some('c') == string.chars().nth(i) && !mode.contains(&Mode::CountOnly) {
-                            mode.push(Mode::CountOnly);
+                        if Some('c') == string.chars().nth(i)
+                            && !match_options.contains(&MatchOptions::CountOnly)
+                        {
                             match_options.push(MatchOptions::CountOnly);
                         }
 
                         let output_file = PathBuf::new();
 
                         if Some('o') == string.chars().nth(i)
-                            && !mode.contains(&Mode::OutputFile(output_file.clone()))
                             && !output_options.contains(&OutputOptions::OutputFile(output_file))
                         {
                             let output_file = PathBuf::from(vec[no + 1].clone());
@@ -208,13 +197,11 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                             if !output_file.exists() {
                                 File::create(&output_file)?;
                                 o_flag = no + 1;
-                                mode.push(Mode::OutputFile(output_file.clone()));
                                 output_options.push(OutputOptions::OutputFile(output_file.clone()));
                             }
 
                             if output_file.is_file() {
                                 o_flag = no + 1;
-                                mode.push(Mode::OutputFile(output_file.clone()));
                                 output_options.push(OutputOptions::OutputFile(output_file))
                             }
                         }
@@ -247,7 +234,6 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             Ok(Config {
                 pattern: vec[pattern_no].clone(),
                 input_source,
-                mode,
                 read_options,
                 match_options,
                 output_options,
@@ -255,9 +241,6 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             })
         }
 
-        // _ => Err(Error::Internal {
-        //     context: "Non-Support Arguments".into(),
-        // }),
         _ => Err(Error::Argument("Non-Support Arguments".into())),
     }
 }
@@ -288,7 +271,6 @@ mod test {
         let expected = Config {
             pattern: "cngrep".into(),
             input_source: vec![],
-            mode: vec![],
             read_options: vec![],
             match_options: vec![],
             output_options: vec![],
@@ -305,7 +287,6 @@ mod test {
         let expected = Config {
             pattern: "cngrep".into(),
             input_source: vec![PathBuf::from("/home/cn/Documents")],
-            mode: vec![],
             read_options: vec![],
             match_options: vec![],
             output_options: vec![],
@@ -322,7 +303,6 @@ mod test {
         let expected = Config {
             pattern: "cngrep".into(),
             input_source: vec![],
-            mode: vec![Mode::CountOnly],
             read_options: vec![],
             match_options: vec![MatchOptions::CountOnly],
             output_options: vec![],
@@ -339,7 +319,6 @@ mod test {
         let expected = Config {
             pattern: "".into(),
             input_source: vec![PathBuf::from("/home/cn/Documents")],
-            mode: vec![Mode::CountOnly],
             read_options: vec![],
             match_options: vec![MatchOptions::CountOnly],
             output_options: vec![],
@@ -357,7 +336,6 @@ mod test {
         let expected = Config {
             pattern: "cngrep".into(),
             input_source: vec![PathBuf::from("/home/cn/Documents")],
-            mode: vec![Mode::CountOnly],
             read_options: vec![],
             match_options: vec![MatchOptions::CountOnly],
             output_options: vec![],
