@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{cli::Mode, error::Error};
+use crate::{cli::ReadOptions, error::Error};
 
 #[derive(Debug, PartialEq)]
 pub enum ReadResult {
@@ -13,7 +13,7 @@ pub enum ReadResult {
     MultiFile(Vec<PathBuf>),
 }
 
-pub fn read(input_source: &[PathBuf], _mode: &[Mode]) -> Result<ReadResult, Error> {
+pub fn read(input_source: &[PathBuf], _mode: &[ReadOptions]) -> Result<ReadResult, Error> {
     if input_source.is_empty() {
         let stdin = std::io::stdin();
 
@@ -85,7 +85,7 @@ fn recursive_path(path: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     Ok(result)
 }
 
-pub fn recursive_dir(dir: &Path, _mode: &[Mode]) -> Result<Vec<PathBuf>, Error> {
+pub fn recursive_dir(dir: &Path, _mode: &[ReadOptions]) -> Result<Vec<PathBuf>, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
 
     for entry in dir.read_dir()? {
