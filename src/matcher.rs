@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    cli::Mode,
+    cli::MatchOptions,
     error::Error,
     printer::{
         CountMultiFile, CountResult, MatchMultiFile, MatchStdinFile,
@@ -18,13 +18,13 @@ use crate::{
 pub fn search(
     pattern: &str,
     read_result: &ReadResult,
-    mode: &[Mode],
+    mode: &[MatchOptions],
 ) -> Result<SearchResult, Error> {
     let result: SearchResult = match read_result {
         ReadResult::Stdin => {
             let stdin = std::io::stdin();
 
-            if mode.contains(&Mode::CountOnly) {
+            if mode.contains(&MatchOptions::CountOnly) {
                 return stdin.count_search(pattern);
             }
 
@@ -32,7 +32,7 @@ pub fn search(
         }
 
         ReadResult::File(file) => {
-            if mode.contains(&Mode::CountOnly) {
+            if mode.contains(&MatchOptions::CountOnly) {
                 return file.count_search(pattern);
             }
 
@@ -40,7 +40,7 @@ pub fn search(
         }
 
         ReadResult::MultiFile(multi_file) => {
-            if mode.contains(&Mode::CountOnly) {
+            if mode.contains(&MatchOptions::CountOnly) {
                 return multi_file.count_search(pattern);
             }
 
@@ -77,7 +77,7 @@ impl MatchSearch for Stdin {
             }
         }
 
-        Ok(SearchResult::Normal(NormalResult::SF(match_result)))
+        Ok(SearchResult::Normal(NormalResult::StdinFile(match_result)))
     }
 
     fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
@@ -90,7 +90,7 @@ impl MatchSearch for Stdin {
             }
         }
 
-        Ok(SearchResult::Count(CountResult::SF(match_number)))
+        Ok(SearchResult::Count(CountResult::StdinFile(match_number)))
     }
 }
 
@@ -110,7 +110,7 @@ impl MatchSearch for PathBuf {
             }
         }
 
-        Ok(SearchResult::Normal(NormalResult::SF(match_result)))
+        Ok(SearchResult::Normal(NormalResult::StdinFile(match_result)))
     }
 
     fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
@@ -124,7 +124,7 @@ impl MatchSearch for PathBuf {
             }
         }
 
-        Ok(SearchResult::Count(CountResult::SF(match_number)))
+        Ok(SearchResult::Count(CountResult::StdinFile(match_number)))
     }
 }
 
@@ -156,7 +156,9 @@ impl MatchSearch for Vec<PathBuf> {
             }
         }
 
-        Ok(SearchResult::Normal(NormalResult::MF(dir_match_result)))
+        Ok(SearchResult::Normal(NormalResult::MultiFile(
+            dir_match_result,
+        )))
     }
 
     fn count_search(&self, pattern: &str) -> Result<SearchResult, Error> {
@@ -179,6 +181,6 @@ impl MatchSearch for Vec<PathBuf> {
             });
         }
 
-        Ok(SearchResult::Count(CountResult::MF(dir_match)))
+        Ok(SearchResult::Count(CountResult::MultiFile(dir_match)))
     }
 }
