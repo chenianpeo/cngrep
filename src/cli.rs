@@ -36,7 +36,11 @@ pub enum OutputOptions {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum SpecialOptions {}
+pub enum SpecialOptions {
+    Help,
+    PrintConfig,
+    Version,
+}
 
 // arguments parse result
 #[derive(Debug)]
@@ -50,6 +54,12 @@ pub enum ParseResult {
 pub enum SpecialArgs {
     Help(&'static str),
     Version(&'static str),
+}
+
+#[derive(Debug)]
+pub enum Parse {
+    Ok(Config),
+    Special(SpecialOptions),
 }
 
 impl ParseResult {
@@ -109,7 +119,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             let read_options: Vec<ReadOptions> = Vec::new();
             let mut match_options: Vec<MatchOptions> = Vec::new();
             let output_options: Vec<OutputOptions> = Vec::new();
-            let other_options: Vec<SpecialOptions> = Vec::new();
+            let mut special_options: Vec<SpecialOptions> = Vec::new();
 
             // traversal parameter
             for (no, string) in vec.iter().enumerate() {
@@ -121,6 +131,12 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                             && !match_options.contains(&MatchOptions::CountOnly)
                         {
                             match_options.push(MatchOptions::CountOnly);
+                        }
+
+                        if Some('p') == string.chars().nth(i)
+                            && !special_options.contains(&SpecialOptions::PrintConfig)
+                        {
+                            special_options.push(SpecialOptions::PrintConfig);
                         }
                     }
 
@@ -150,7 +166,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                 && (!read_options.is_empty()
                     || !match_options.is_empty()
                     || !output_options.is_empty()
-                    || !other_options.is_empty())
+                    || !special_options.is_empty())
             {
                 pattern = "".to_string();
             }
@@ -161,7 +177,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                 read_options,
                 match_options,
                 output_options,
-                special_options: other_options,
+                special_options,
             })
         }
 
@@ -178,7 +194,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
             let read_options: Vec<ReadOptions> = Vec::new();
             let mut match_options: Vec<MatchOptions> = Vec::new();
             let mut output_options: Vec<OutputOptions> = Vec::new();
-            let other_options: Vec<SpecialOptions> = Vec::new();
+            let mut special_options: Vec<SpecialOptions> = Vec::new();
 
             for (no, string) in vec.iter().enumerate() {
                 if string.starts_with('-') {
@@ -206,6 +222,12 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                                 o_flag = no + 1;
                                 output_options.push(OutputOptions::OutputFile(output_file))
                             }
+                        }
+
+                        if Some('p') == string.chars().nth(i)
+                            && !special_options.contains(&SpecialOptions::PrintConfig)
+                        {
+                            special_options.push(SpecialOptions::PrintConfig);
                         }
                     }
 
@@ -239,7 +261,7 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                 read_options,
                 match_options,
                 output_options,
-                special_options: other_options,
+                special_options,
             })
         }
 

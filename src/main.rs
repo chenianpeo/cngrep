@@ -47,7 +47,10 @@ fn run() -> Result<(), Error> {
             return Ok(());
         }
     };
-    // println!("{:?}", args);
+    if args.special_options.contains(&cg::cli::SpecialOptions::PrintConfig)
+    {
+        println!("{:#?}", args);
+    }
 
     // obtain input source path
     let read_result = read(&args.input_source, &args.read_options)?;
