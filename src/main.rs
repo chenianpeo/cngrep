@@ -47,7 +47,9 @@ fn run() -> Result<(), Error> {
             return Ok(());
         }
     };
-    if args.special_options.contains(&cg::cli::SpecialOptions::PrintConfig)
+    if args
+        .special_options
+        .contains(&cg::cli::SpecialOptions::PrintConfig)
     {
         println!("{:#?}", args);
     }

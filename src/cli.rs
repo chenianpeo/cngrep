@@ -138,6 +138,18 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                         {
                             special_options.push(SpecialOptions::PrintConfig);
                         }
+
+                        if Some('i') == string.chars().nth(i)
+                            && !match_options.contains(&MatchOptions::IgnoreCase)
+                        {
+                            match_options.push(MatchOptions::IgnoreCase);
+                        }
+
+                        if Some('o') == string.chars().nth(i)
+                            && !special_options.contains(&SpecialOptions::PrintConfig)
+                        {
+                            special_options.push(SpecialOptions::PrintConfig);
+                        }
                     }
 
                     // get other argument
@@ -228,6 +240,12 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                             && !special_options.contains(&SpecialOptions::PrintConfig)
                         {
                             special_options.push(SpecialOptions::PrintConfig);
+                        }
+
+                        if Some('i') == string.chars().nth(i)
+                            && !match_options.contains(&MatchOptions::IgnoreCase)
+                        {
+                            match_options.push(MatchOptions::IgnoreCase);
                         }
                     }
 
