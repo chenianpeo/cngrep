@@ -6,6 +6,7 @@ use std::{fmt::Display, fs::File};
 pub enum SearchResult {
     Normal(NormalResult), // default match
     Count(CountResult),   // match of count only
+    IgnoreCase(IgnoreCaseResult),
 }
 
 #[derive(Debug)]
@@ -18,6 +19,12 @@ pub enum NormalResult {
 pub enum CountResult {
     StdinFile(usize),
     MultiFile(Vec<CountMultiFile>),
+}
+
+#[derive(Debug)]
+pub enum IgnoreCaseResult {
+    StdinFile(Vec<MatchStdinFile>),
+    MultiFile(Vec<MatchMultiFile>),
 }
 
 #[derive(Debug)]
@@ -80,6 +87,7 @@ impl<T: Display> Color for T {}
 //     fn new(read_result: &ReadResult) -> Self;
 // }
 
+// FIXME fix print option priority
 // output result
 pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> Result<(), Error> {
     // output result to file
@@ -149,6 +157,32 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
                     }
 
                     writeln!(output_file, "Total Match Number: {total_number}")?;
+                }
+            },
+
+            SearchResult::IgnoreCase(ignore_case_result) => match ignore_case_result {
+                IgnoreCaseResult::StdinFile(file_result) => {
+                    is_matched(file_result)?;
+
+                    for file in file_result {
+                        writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
+                    }
+                }
+
+                IgnoreCaseResult::MultiFile(dir_result) => {
+                    is_matched(dir_result)?;
+
+                    for (dir_no, dir) in dir_result.iter().enumerate() {
+                        writeln!(output_file, "{}", dir.path.display())?;
+
+                        for file in dir.file.iter() {
+                            writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
+                        }
+
+                        if dir_no != dir_result.len() - 1 {
+                            writeln!(output_file)?;
+                        }
+                    }
                 }
             },
         }
@@ -221,18 +255,44 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
                     println!("Total Match Number: {total_number}");
                 }
             },
+
+            SearchResult::IgnoreCase(ignore_case_result) => match ignore_case_result {
+                IgnoreCaseResult::StdinFile(file_result) => {
+                    is_matched(file_result)?;
+
+                    for file in file_result {
+                        println!(
+                            "{}:{}",
+                            (file.line_no + 1).blue(),
+                            file.content
+                                .replace(&pattern.to_lowercase(), &pattern.green()) // FIXME highlight original content
+                        );
+                    }
+                }
+
+                IgnoreCaseResult::MultiFile(dir_result) => {
+                    is_matched(dir_result)?;
+
+                    for (dir_no, dir) in dir_result.iter().enumerate() {
+                        println!("{}", dir.path.display().yellow());
+
+                        for file in dir.file.iter() {
+                            println!(
+                                "{}:{}",
+                                (file.line_no + 1).blue(),
+                                file.content
+                                    .replace(&pattern.to_lowercase(), &pattern.green())
+                            );
+                        }
+
+                        if dir_no != dir_result.len() - 1 {
+                            println!();
+                        }
+                    }
+                }
+            },
         }
     }
 
     Ok(())
 }
-
-// fn print<T>(r: &[T]) -> Result<(), Error> {
-
-//     Ok(())
-// }
-
-// fn write<T>(r: T) -> Result<(), Error> {
-
-//     Ok(())
-// }
