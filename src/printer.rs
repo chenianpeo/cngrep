@@ -261,12 +261,7 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
                     is_matched(file_result)?;
 
                     for file in file_result {
-                        println!(
-                            "{}:{}",
-                            (file.line_no + 1).blue(),
-                            file.content
-                                .replace(&pattern.to_lowercase(), &pattern.green()) // FIXME highlight original content
-                        );
+                        println!("{}:{}", (file.line_no + 1).blue(), file.content,);
                     }
                 }
 
@@ -277,12 +272,7 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
                         println!("{}", dir.path.display().yellow());
 
                         for file in dir.file.iter() {
-                            println!(
-                                "{}:{}",
-                                (file.line_no + 1).blue(),
-                                file.content
-                                    .replace(&pattern.to_lowercase(), &pattern.green())
-                            );
+                            println!("{}:{}", (file.line_no + 1).blue(), file.content,);
                         }
 
                         if dir_no != dir_result.len() - 1 {
