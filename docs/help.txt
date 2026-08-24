@@ -5,5 +5,16 @@ Arguments:
     <PATTERN>   Search pattern
     [PATH]      File or directory to search
 
-Options:
-    -c, --CountOnly     Count matches only
+Match Options:
+    -c, --count             Count matches only
+    -i, --ignore-case       Ignore case search
+
+Output Options:
+    -o, --output            Output result to file
+
+Read Options:
+
+Special Options:
+    -h, --help              Display help information
+    -p, --print-config      Print arguments config
+    -v, --version           Print software version
