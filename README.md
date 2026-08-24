@@ -1,12 +1,14 @@
 # CNGREP(CG)
 CNGREP is a simple command-line text search tool written in Rust.
-It is designed as a learning project like `grep``ripgrep`
+It is designed as a learning project like grep, ripgrep.
 
 ## Features
 Currently, cngrep supports:
 - Search text in a single or multiple file and recursive directory
 - Search from standard input
-- Options include normal and count only mode
+- Match options include count only and ignore case
+- Output options include output file
+- Special options include help information, version and print args config
 
 ## Build
 Build the project with cargo `cargo build`
