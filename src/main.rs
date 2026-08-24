@@ -12,8 +12,6 @@ use std::process::ExitCode;
 // todo: exit code should design to be, 0123
 // 0 > success, 1 > not found, 2 > running error
 fn main() -> ExitCode {
-    let _file = cg::os::file::File::open("/home/cn/Code/cngrep/README.md").unwrap();
-
     match run() {
         Ok(_) => ExitCode::from(0),
 
