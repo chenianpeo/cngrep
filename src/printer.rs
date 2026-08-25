@@ -2,6 +2,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::{fmt::Display, fs::File};
 
+// TODO search result shouldn't include match type
 #[derive(Debug)]
 pub enum SearchResult {
     Normal(NormalResult), // default match
@@ -87,7 +88,7 @@ impl<T: Display> Color for T {}
 //     fn new(read_result: &ReadResult) -> Self;
 // }
 
-// FIXME fix print option priority
+// TODO output type of terminal and file have refactor
 // output result
 pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> Result<(), Error> {
     // output result to file
@@ -259,20 +260,50 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
             SearchResult::IgnoreCase(ignore_case_result) => match ignore_case_result {
                 IgnoreCaseResult::StdinFile(file_result) => {
                     is_matched(file_result)?;
+                    let pattern_lowercase = pattern.to_lowercase();
+                    let pattern_len = pattern_lowercase.len();
 
                     for file in file_result {
-                        println!("{}:{}", (file.line_no + 1).blue(), file.content,);
+                        let file_content = file.content.clone();
+                        let file_content_lowercase = file_content.to_lowercase();
+                        let mut index_pattern = 0;
+                        if let Some(index) = file_content_lowercase.find(&pattern_lowercase) {
+                            index_pattern = index;
+                        }
+                        let index_pattern_end = index_pattern + pattern_len;
+                        let match_content = &file_content[index_pattern..index_pattern_end];
+
+                        println!(
+                            "{}:{}",
+                            (file.line_no + 1).blue(),
+                            file_content.replace(match_content, &match_content.green())
+                        );
                     }
                 }
 
                 IgnoreCaseResult::MultiFile(dir_result) => {
                     is_matched(dir_result)?;
+                    let pattern_lowercase = pattern.to_lowercase();
+                    let pattern_len = pattern_lowercase.len();
 
                     for (dir_no, dir) in dir_result.iter().enumerate() {
                         println!("{}", dir.path.display().yellow());
 
                         for file in dir.file.iter() {
-                            println!("{}:{}", (file.line_no + 1).blue(), file.content,);
+                            let file_content = file.content.clone();
+                            let file_content_lowercase = file_content.to_lowercase();
+                            let mut index_pattern = 0;
+                            if let Some(index) = file_content_lowercase.find(&pattern_lowercase) {
+                                index_pattern = index;
+                            }
+                            let index_pattern_end = index_pattern + pattern_len;
+                            let match_content = &file_content[index_pattern..index_pattern_end];
+
+                            println!(
+                                "{}:{}",
+                                (file.line_no + 1).blue(),
+                                file_content.replace(match_content, &match_content.green())
+                            );
                         }
 
                         if dir_no != dir_result.len() - 1 {
