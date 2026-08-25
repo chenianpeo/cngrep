@@ -2,12 +2,10 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::{fmt::Display, fs::File};
 
-// TODO search result shouldn't include match type
 #[derive(Debug)]
 pub enum SearchResult {
     Normal(NormalResult), // default match
     Count(CountResult),   // match of count only
-    IgnoreCase(IgnoreCaseResult),
 }
 
 #[derive(Debug)]
@@ -20,12 +18,6 @@ pub enum NormalResult {
 pub enum CountResult {
     StdinFile(usize),
     MultiFile(Vec<CountMultiFile>),
-}
-
-#[derive(Debug)]
-pub enum IgnoreCaseResult {
-    StdinFile(Vec<MatchStdinFile>),
-    MultiFile(Vec<MatchMultiFile>),
 }
 
 #[derive(Debug)]
@@ -83,10 +75,6 @@ pub trait Color: Display {
 }
 
 impl<T: Display> Color for T {}
-
-// pub trait Print {
-//     fn new(read_result: &ReadResult) -> Self;
-// }
 
 // TODO output type of terminal and file have refactor
 // output result
@@ -160,32 +148,6 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
                     writeln!(output_file, "Total Match Number: {total_number}")?;
                 }
             },
-
-            SearchResult::IgnoreCase(ignore_case_result) => match ignore_case_result {
-                IgnoreCaseResult::StdinFile(file_result) => {
-                    is_matched(file_result)?;
-
-                    for file in file_result {
-                        writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
-                    }
-                }
-
-                IgnoreCaseResult::MultiFile(dir_result) => {
-                    is_matched(dir_result)?;
-
-                    for (dir_no, dir) in dir_result.iter().enumerate() {
-                        writeln!(output_file, "{}", dir.path.display())?;
-
-                        for file in dir.file.iter() {
-                            writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
-                        }
-
-                        if dir_no != dir_result.len() - 1 {
-                            writeln!(output_file)?;
-                        }
-                    }
-                }
-            },
         }
     } else {
         // output result to terminal
@@ -193,27 +155,52 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
             SearchResult::Normal(normal_result) => match normal_result {
                 NormalResult::StdinFile(file_result) => {
                     is_matched(file_result)?;
+                    let pattern_lowercase = pattern.to_lowercase();
+                    let pattern_len = pattern.len();
 
                     for file in file_result {
+                        let file_content = file.content.clone();
+                        let mut index_pattern = 0;
+
+                        if let Some(index) = file_content.to_lowercase().find(&pattern_lowercase) {
+                            index_pattern = index;
+                        }
+
+                        let match_content =
+                            &file_content[index_pattern..(index_pattern + pattern_len)];
+
                         println!(
                             "{}:{}",
                             (file.line_no + 1).blue(),
-                            file.content.replace(pattern, &pattern.green())
+                            file.content.replace(match_content, &match_content.green())
                         );
                     }
                 }
 
                 NormalResult::MultiFile(dir_result) => {
                     is_matched(dir_result)?;
+                    let pattern_lowercase = pattern.to_lowercase();
+                    let pattern_len = pattern.len();
 
                     for (dir_no, dir) in dir_result.iter().enumerate() {
                         println!("{}", dir.path.display().yellow());
 
                         for file in dir.file.iter() {
+                            let file_content = file.content.clone();
+                            let mut index_pattern = 0;
+
+                            if let Some(index) =
+                                file_content.to_lowercase().find(&pattern_lowercase)
+                            {
+                                index_pattern = index;
+                            }
+                            let match_content =
+                                &file_content[index_pattern..(index_pattern + pattern_len)];
+
                             println!(
                                 "{}:{}",
                                 (file.line_no + 1).blue(),
-                                file.content.replace(pattern, &pattern.green())
+                                file.content.replace(match_content, &match_content.green())
                             );
                         }
 
@@ -254,62 +241,6 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
                     }
 
                     println!("Total Match Number: {total_number}");
-                }
-            },
-
-            SearchResult::IgnoreCase(ignore_case_result) => match ignore_case_result {
-                IgnoreCaseResult::StdinFile(file_result) => {
-                    is_matched(file_result)?;
-                    let pattern_lowercase = pattern.to_lowercase();
-                    let pattern_len = pattern_lowercase.len();
-
-                    for file in file_result {
-                        let file_content = file.content.clone();
-                        let file_content_lowercase = file_content.to_lowercase();
-                        let mut index_pattern = 0;
-                        if let Some(index) = file_content_lowercase.find(&pattern_lowercase) {
-                            index_pattern = index;
-                        }
-                        let index_pattern_end = index_pattern + pattern_len;
-                        let match_content = &file_content[index_pattern..index_pattern_end];
-
-                        println!(
-                            "{}:{}",
-                            (file.line_no + 1).blue(),
-                            file_content.replace(match_content, &match_content.green())
-                        );
-                    }
-                }
-
-                IgnoreCaseResult::MultiFile(dir_result) => {
-                    is_matched(dir_result)?;
-                    let pattern_lowercase = pattern.to_lowercase();
-                    let pattern_len = pattern_lowercase.len();
-
-                    for (dir_no, dir) in dir_result.iter().enumerate() {
-                        println!("{}", dir.path.display().yellow());
-
-                        for file in dir.file.iter() {
-                            let file_content = file.content.clone();
-                            let file_content_lowercase = file_content.to_lowercase();
-                            let mut index_pattern = 0;
-                            if let Some(index) = file_content_lowercase.find(&pattern_lowercase) {
-                                index_pattern = index;
-                            }
-                            let index_pattern_end = index_pattern + pattern_len;
-                            let match_content = &file_content[index_pattern..index_pattern_end];
-
-                            println!(
-                                "{}:{}",
-                                (file.line_no + 1).blue(),
-                                file_content.replace(match_content, &match_content.green())
-                            );
-                        }
-
-                        if dir_no != dir_result.len() - 1 {
-                            println!();
-                        }
-                    }
                 }
             },
         }
