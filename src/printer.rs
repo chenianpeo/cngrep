@@ -1,6 +1,10 @@
 use std::fmt::Display;
+use std::fs::File;
+use std::io;
+use std::io::Write;
 use std::path::PathBuf;
 
+use crate::cli::OutputOptions;
 use crate::error::Error;
 
 #[derive(Debug)]
@@ -252,31 +256,65 @@ pub struct CountResult {
     pub number: usize,
 }
 
-// pub fn _render<W: Write>(
-pub fn render(
-    // pattern: &str,
-    result: &SearchResult,
-    // writer: &mut W,
-    
-) -> Result<(), Error> {
+pub fn output_result(result: &SearchResult, mode: &[OutputOptions]) -> Result<(), Error> {
+    let mut output_position = OutputPosition::Terminal;
+    for options in mode {
+        output_position = match options {
+            // OutputOptions::File(file) => {
+
+            // }
+
+            // OutputOptions::Terminal => {
+            //     let stdout = io::stdout();
+            //     let mut writer = stdout.lock();
+
+            //     render(result, &mut writer)?;
+            // }
+            OutputOptions::File(file) => OutputPosition::File(file.clone()),
+            _ => OutputPosition::Terminal,
+        }
+    }
+
+    match output_position {
+        OutputPosition::File(file) => {
+            let mut writer = File::create(file)?;
+            render(result, &mut writer)?;
+        }
+
+        OutputPosition::Terminal => {
+            let stdout = io::stdout();
+            let mut writer = stdout.lock();
+
+            render(result, &mut writer)?;
+        }
+    }
+
+    Ok(())
+}
+
+pub fn render<W: Write>(result: &SearchResult, writer: &mut W) -> Result<(), Error> {
     match result {
         SearchResult::Normal(result) => {
             for (no, normal) in result.iter().enumerate() {
-                if let Some(path) = normal.path.clone() && no > 1 {
-                    println!("{}", path.display().yellow());
+                if let Some(path) = normal.path.clone()
+                    && result.iter().len() != 1
+                {
+                    writeln!(writer, "{}", path.display().yellow())?;
                 }
 
                 for single_match in normal.matches.iter() {
-                    let content = &single_match.content[single_match.range.start..single_match.range.end];
-                    println!(
+                    let content =
+                        &single_match.content[single_match.range.start..single_match.range.end];
+                    writeln!(
+                        writer,
                         "{}:{}",
                         (single_match.line_num + 1).blue(),
-                        single_match.content.replace(content, &content.green()),
-                    )
+                        single_match.content.replace(content, &content.green())
+                    )?;
                 }
 
-                if no < result.iter().len() -1  {
-                    println!()
+                if no < result.iter().len() - 1 {
+                    writeln!(writer)?;
                 }
             }
         }
@@ -284,9 +322,9 @@ pub fn render(
         SearchResult::Count(result) => {
             for count in result {
                 if let Some(path) = count.path.clone() {
-                    println!("{}: {}", path.display().yellow(), count.number)
+                    writeln!(writer, "{}: {}", path.display().yellow(), count.number)?;
                 } else {
-                    println!("{}", count.number);
+                    writeln!(writer, "{}", count.number)?;
                 }
             }
         }
