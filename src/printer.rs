@@ -38,6 +38,12 @@ pub struct CountMultiFile {
     pub number: usize,
 }
 
+#[derive(Debug)]
+pub enum OutputPosition {
+    Terminal,
+    File(PathBuf),
+}
+
 use crate::cli::OutputOptions;
 use crate::error::Error;
 
@@ -76,82 +82,84 @@ pub trait Color: Display {
 
 impl<T: Display> Color for T {}
 
-// TODO output type of terminal and file have refactor
 // output result
 pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> Result<(), Error> {
-    // output result to file
-    let output_file = mode.iter().find_map(|mode| match mode {
-        OutputOptions::OutputFile(path) => Some(path),
-        _ => None,
-    });
+    let mut output_position = OutputPosition::Terminal;
+    for options in mode {
+        output_position = match options {
+            OutputOptions::OutputFile(path) => OutputPosition::File(path.clone()),
+            _ => OutputPosition::Terminal,
+        }
+    }
 
-    if let Some(path) = output_file {
-        let mut output_file = File::create(path)?;
+    match output_position {
+        OutputPosition::File(path) => {
+            let mut output_file = File::create(path)?;
 
-        match result {
-            SearchResult::Normal(normal_result) => match normal_result {
-                NormalResult::StdinFile(file_result) => {
-                    is_matched(file_result)?;
+            match result {
+                SearchResult::Normal(normal_result) => match normal_result {
+                    NormalResult::StdinFile(file_result) => {
+                        is_matched(file_result)?;
 
-                    for file in file_result {
-                        writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
-                    }
-                }
-
-                NormalResult::MultiFile(dir_result) => {
-                    is_matched(dir_result)?;
-
-                    for (dir_no, dir) in dir_result.iter().enumerate() {
-                        writeln!(output_file, "{}", dir.path.display())?;
-
-                        for file in dir.file.iter() {
+                        for file in file_result {
                             writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
                         }
+                    }
 
-                        if dir_no != dir_result.len() - 1 {
-                            writeln!(output_file)?;
+                    NormalResult::MultiFile(dir_result) => {
+                        is_matched(dir_result)?;
+
+                        for (dir_no, dir) in dir_result.iter().enumerate() {
+                            writeln!(output_file, "{}", dir.path.display())?;
+
+                            for file in dir.file.iter() {
+                                writeln!(output_file, "{}:{}", file.line_no + 1, file.content,)?;
+                            }
+
+                            if dir_no != dir_result.len() - 1 {
+                                writeln!(output_file)?;
+                            }
                         }
                     }
-                }
-            },
+                },
 
-            SearchResult::Count(count_result) => match count_result {
-                CountResult::StdinFile(stdin_file) => {
-                    if stdin_file == &0 {
-                        let not_fount = "Not Found".red();
-                        return Err(Error::NotFound(not_fount));
-                    } else {
-                        writeln!(output_file, "{stdin_file}")?;
-                    }
-                }
-
-                CountResult::MultiFile(multi_file) => {
-                    let mut total_number: usize = 0;
-
-                    for single_file in multi_file {
-                        if single_file.number != 0 {
-                            total_number += single_file.number;
-                            writeln!(
-                                output_file,
-                                "{}:{}",
-                                single_file.path.display(),
-                                single_file.number
-                            )?;
+                SearchResult::Count(count_result) => match count_result {
+                    CountResult::StdinFile(stdin_file) => {
+                        if stdin_file == &0 {
+                            let not_fount = "Not Found".red();
+                            return Err(Error::NotFound(not_fount));
+                        } else {
+                            writeln!(output_file, "{stdin_file}")?;
                         }
                     }
 
-                    if total_number == 0 {
-                        let not_fount = "Not Found".red();
-                        return Err(Error::NotFound(not_fount));
-                    }
+                    CountResult::MultiFile(multi_file) => {
+                        let mut total_number: usize = 0;
 
-                    writeln!(output_file, "Total Match Number: {total_number}")?;
-                }
-            },
+                        for single_file in multi_file {
+                            if single_file.number != 0 {
+                                total_number += single_file.number;
+                                writeln!(
+                                    output_file,
+                                    "{}:{}",
+                                    single_file.path.display(),
+                                    single_file.number
+                                )?;
+                            }
+                        }
+
+                        if total_number == 0 {
+                            let not_fount = "Not Found".red();
+                            return Err(Error::NotFound(not_fount));
+                        }
+
+                        writeln!(output_file, "Total Match Number: {total_number}")?;
+                    }
+                },
+            }
         }
-    } else {
-        // output result to terminal
-        match result {
+
+        OutputPosition::Terminal => match result {
             SearchResult::Normal(normal_result) => match normal_result {
                 NormalResult::StdinFile(file_result) => {
                     is_matched(file_result)?;
@@ -243,7 +251,7 @@ pub fn render(pattern: &str, result: &SearchResult, mode: &[OutputOptions]) -> R
                     println!("Total Match Number: {total_number}");
                 }
             },
-        }
+        },
     }
 
     Ok(())
