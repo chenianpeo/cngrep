@@ -13,19 +13,8 @@ pub enum OutputPosition {
     File(PathBuf),
 }
 
-// check if the search result is empty and return Not Found
-// todo: should move to matching stage
-// fn is_matched<T>(r: &[T]) -> Result<(), Error> {
-//     let not_fount = "Not Found".red();
-
-//     if r.is_empty() {
-//         return Err(Error::NotFound(not_fount));
-//     }
-
-//     Ok(())
-// }
-
-// color output content
+// it's too abstract
+// should more simple
 pub trait Color: Display {
     fn color(&self, code: u8) -> String {
         format!("\x1b[{}m{}\x1b[0m", code, self)
@@ -81,8 +70,16 @@ pub struct CountResult {
     pub number: usize,
 }
 
+#[derive(Debug)]
+pub struct OutputConfig {
+    pub position: Option<PathBuf>,
+    pub color: bool,
+}
+
+// control output process, parse output options
+// parse like color mode
 pub fn output_result(result: &SearchResult, mode: &[OutputOptions]) -> Result<(), Error> {
-    // need redesigned output position options
+    // bug: need redesigned output position options
     // the for loop is not required
     let mut output_position = OutputPosition::Terminal;
     for options in mode {
@@ -111,15 +108,16 @@ pub fn output_result(result: &SearchResult, mode: &[OutputOptions]) -> Result<()
 
 // Color output should be control by color mode
 // output result through writeln and default include color
-//
 // render function don't judge output position
+//
+// can split to two function, render and render_count
 pub fn render<W: Write>(result: &SearchResult, writer: &mut W) -> Result<(), Error> {
     match result {
         SearchResult::Normal(result) => {
             for (no, normal) in result.iter().enumerate() {
-                
-                if let Some(path) = normal.path.clone()
-                    && result.iter().len() != 1
+                if let Some(path) = &normal.path
+                    && result.len() != 1
+                // iter() can simplify
                 {
                     writeln!(writer, "{}", path.display().yellow())?;
                 }
@@ -143,7 +141,7 @@ pub fn render<W: Write>(result: &SearchResult, writer: &mut W) -> Result<(), Err
 
         SearchResult::Count(result) => {
             for count in result {
-                if let Some(path) = count.path.clone() {
+                if let Some(path) = &count.path {
                     writeln!(writer, "{}: {}", path.display().yellow(), count.number)?;
                 } else {
                     writeln!(writer, "{}", count.number)?;
