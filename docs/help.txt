@@ -10,7 +10,6 @@ Match Options:
     -i, --ignore-case       Ignore case search
 
 Output Options:
-    -o, --output            Output result to file
 
 Read Options:
 

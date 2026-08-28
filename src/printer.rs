@@ -1,20 +1,10 @@
 use std::fmt::Display;
-use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
 
-use crate::cli::OutputOptions;
 use crate::error::Error;
 
-#[derive(Debug)]
-pub enum OutputPosition {
-    Terminal,
-    File(PathBuf),
-}
-
-// it's too abstract
-// should more simple
 pub trait Color: Display {
     fn color(&self, code: u8) -> String {
         format!("\x1b[{}m{}\x1b[0m", code, self)
@@ -55,11 +45,12 @@ pub struct NormalResult {
 pub struct Match {
     pub line_num: usize,
     pub content: String,
-    pub range: MatchRange,
+    pub range: Range,
 }
 
+// public range struct
 #[derive(Debug)]
-pub struct MatchRange {
+pub struct Range {
     pub start: usize,
     pub end: usize,
 }
@@ -70,83 +61,53 @@ pub struct CountResult {
     pub number: usize,
 }
 
-#[derive(Debug)]
-pub struct OutputConfig {
-    pub position: Option<PathBuf>,
-    pub color: bool,
-}
-
-// control output process, parse output options
-// parse like color mode
-pub fn output_result(result: &SearchResult, mode: &[OutputOptions]) -> Result<(), Error> {
-    // bug: need redesigned output position options
-    // the for loop is not required
-    let mut output_position = OutputPosition::Terminal;
-    for options in mode {
-        output_position = match options {
-            OutputOptions::File(file) => OutputPosition::File(file.clone()),
-            _ => OutputPosition::Terminal,
-        }
-    }
-
-    match output_position {
-        OutputPosition::File(file) => {
-            let mut writer = File::create(file)?;
-            render(result, &mut writer)?;
-        }
-
-        OutputPosition::Terminal => {
+pub fn output_result(result: &SearchResult) -> Result<(), Error> {
+    match result {
+        SearchResult::Normal(normals) => {
             let stdout = io::stdout();
             let mut writer = stdout.lock();
 
-            render(result, &mut writer)?;
+            render(normals, &mut writer)?;
+        }
+
+        SearchResult::Count(counts) => {
+            let stdout = io::stdout();
+            let mut writer = stdout.lock();
+
+            render_count(counts, &mut writer)?;
         }
     }
 
     Ok(())
 }
 
-// Color output should be control by color mode
-// output result through writeln and default include color
-// render function don't judge output position
-//
-// can split to two function, render and render_count
-pub fn render<W: Write>(result: &SearchResult, writer: &mut W) -> Result<(), Error> {
-    match result {
-        SearchResult::Normal(result) => {
-            for (no, normal) in result.iter().enumerate() {
-                if let Some(path) = &normal.path
-                    && result.len() != 1
-                // iter() can simplify
-                {
-                    writeln!(writer, "{}", path.display().yellow())?;
-                }
-
-                for single_match in normal.matches.iter() {
-                    let content =
-                        &single_match.content[single_match.range.start..single_match.range.end];
-                    writeln!(
-                        writer,
-                        "{}:{}",
-                        (single_match.line_num + 1).blue(),
-                        single_match.content.replace(content, &content.green())
-                    )?;
-                }
-
-                if no < result.iter().len() - 1 {
-                    writeln!(writer)?;
-                }
-            }
+pub fn render<W: Write>(normals: &[NormalResult], writer: &mut W) -> Result<(), Error> {
+    for (no, normal) in normals.iter().enumerate() {
+        if let Some(path) = &normal.path
+            && normals.len() != 1
+        {
+            writeln!(writer, "{}", path.display())?;
         }
 
-        SearchResult::Count(result) => {
-            for count in result {
-                if let Some(path) = &count.path {
-                    writeln!(writer, "{}: {}", path.display().yellow(), count.number)?;
-                } else {
-                    writeln!(writer, "{}", count.number)?;
-                }
-            }
+        for single in normal.matches.iter() {
+            // let content = &single.content[single.range.start..single.range.end];
+            writeln!(writer, "{}:{}", (single.line_num + 1), single.content)?;
+        }
+
+        if no < normals.len() - 1 {
+            writeln!(writer)?;
+        }
+    }
+
+    Ok(())
+}
+
+pub fn render_count<W: Write>(counts: &[CountResult], writer: &mut W) -> Result<(), Error> {
+    for count in counts {
+        if let Some(path) = &count.path {
+            writeln!(writer, "{}: {}", path.display(), count.number)?;
+        } else {
+            writeln!(writer, "{}", count.number)?;
         }
     }
 
