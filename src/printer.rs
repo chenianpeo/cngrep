@@ -62,20 +62,12 @@ pub struct CountResult {
 }
 
 pub fn output_result(result: &SearchResult) -> Result<(), Error> {
+    let stdout = io::stdout();
+    let mut writer = stdout.lock();
+
     match result {
-        SearchResult::Normal(normals) => {
-            let stdout = io::stdout();
-            let mut writer = stdout.lock();
-
-            render(normals, &mut writer)?;
-        }
-
-        SearchResult::Count(counts) => {
-            let stdout = io::stdout();
-            let mut writer = stdout.lock();
-
-            render_count(counts, &mut writer)?;
-        }
+        SearchResult::Normal(normals) => render(normals, &mut writer)?,
+        SearchResult::Count(counts) => render_count(counts, &mut writer)?
     }
 
     Ok(())
@@ -89,8 +81,7 @@ pub fn render<W: Write>(normals: &[NormalResult], writer: &mut W) -> Result<(), 
             writeln!(writer, "{}", path.display())?;
         }
 
-        for single in normal.matches.iter() {
-            // let content = &single.content[single.range.start..single.range.end];
+        for single in &normal.matches {
             writeln!(writer, "{}:{}", (single.line_num + 1), single.content)?;
         }
 
