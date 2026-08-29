@@ -72,7 +72,8 @@ pub enum Error {
     Argument(String),
     Io(io::Error),
     Match(String),
-    NotFound(String),
+    NotFound,
+    UnFinished,
 }
 
 impl std::error::Error for Error {}
@@ -95,8 +96,11 @@ impl std::fmt::Display for Error {
             Error::Match(err) => {
                 write!(f, "{err}")
             }
-            Error::NotFound(err) => {
-                write!(f, "{err}")
+            Error::NotFound => {
+                write!(f, "not found")
+            }
+            Error::UnFinished => {
+                write!(f, "unfinished")
             }
         }
     }
