@@ -2,7 +2,7 @@ use cg::cli::MatchOptions;
 use cg::cli::Parse;
 use cg::cli::Special;
 use cg::error::Error;
-use cg::matcher::new_search;
+use cg::matcher::search;
 use cg::printer::output_result;
 
 use std::process::ExitCode;
@@ -58,7 +58,7 @@ fn run() -> Result<(), Error> {
         mode = MatchOptions::CountOnly
     }
 
-    let search_result = new_search(&config.pattern, &read_result, &mode)?;
+    let search_result = search(&config.pattern, &read_result, &mode)?;
 
     output_result(&search_result, config.color)?;
 

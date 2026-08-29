@@ -66,7 +66,7 @@ fn parse(_args: &[String]) -> Result<Config, Error> {
         count: cli.count,
         ignore_case: cli.ignore_case,
         color: cli.color,
-        line_no: cli.line_no
+        line_no: cli.line_no,
     };
     Ok(config)
 }
@@ -93,5 +93,5 @@ pub struct Cli {
     pub color: bool,
 
     #[arg(long = "line-number")]
-    pub line_no: bool
+    pub line_no: bool,
 }
