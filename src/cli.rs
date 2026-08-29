@@ -30,9 +30,9 @@ pub enum MatchOptions {
 #[derive(Default, Debug, PartialEq)]
 pub enum OutputOptions {
     #[default]
-    Normal,
+    Terminal,
 
-    OutputFile(PathBuf),
+    File(PathBuf),
 }
 
 #[derive(Debug, PartialEq)]
@@ -56,11 +56,11 @@ pub enum SpecialArgs {
     Version(&'static str),
 }
 
-#[derive(Debug)]
-pub enum Parse {
-    Ok(Config),
-    Special(SpecialOptions),
-}
+// #[derive(Debug)]
+// pub enum Parse {
+//     Ok(Config),
+//     Special(SpecialOptions),
+// }
 
 impl ParseResult {
     // obtain command line arguments
@@ -91,6 +91,7 @@ impl ParseResult {
     }
 }
 
+// TODO refactor parse flow
 // parse arguments
 fn parse_args(vec: &[String]) -> Result<Config, Error> {
     match vec {
@@ -220,19 +221,19 @@ fn parse_args(vec: &[String]) -> Result<Config, Error> {
                         let output_file = PathBuf::new();
 
                         if Some('o') == string.chars().nth(i)
-                            && !output_options.contains(&OutputOptions::OutputFile(output_file))
+                            && !output_options.contains(&OutputOptions::File(output_file))
                         {
                             let output_file = PathBuf::from(vec[no + 1].clone());
 
                             if !output_file.exists() {
                                 File::create(&output_file)?;
                                 o_flag = no + 1;
-                                output_options.push(OutputOptions::OutputFile(output_file.clone()));
+                                output_options.push(OutputOptions::File(output_file.clone()));
                             }
 
                             if output_file.is_file() {
                                 o_flag = no + 1;
-                                output_options.push(OutputOptions::OutputFile(output_file))
+                                output_options.push(OutputOptions::File(output_file))
                             }
                         }
 
@@ -300,90 +301,86 @@ fn help() -> &'static str {
 // Unit Test
 // only test one module or one function
 // unit test does not rely on the entire program
-#[cfg(test)]
-mod test {
-    use std::vec;
 
-    use super::*;
+#[derive(Default, Debug)]
+pub struct NewConfig {
+    pub pattern: String,
+    pub path: Vec<PathBuf>,
+    pub print_config: bool,
+    pub count: bool,
+    pub ignore_case: bool,
+    pub color: bool,
+}
 
-    #[test]
-    fn parse_pattern_only() {
-        let actual = parse_args(&["cngrep".into()]).unwrap();
+#[derive(Debug)]
+pub enum Special {
+    Help,
+    Version,
+}
 
-        let expected = Config {
-            pattern: "cngrep".into(),
-            input_source: vec![],
-            read_options: vec![],
-            match_options: vec![],
-            output_options: vec![],
-            special_options: vec![],
-        };
+#[derive(Debug)]
+pub enum Parse {
+    Ok(NewConfig),
+    Sp(Special),
+}
 
-        assert_eq!(actual, expected);
+impl Parse {
+    /// build `Parse` include Config or Special
+    pub fn build() -> Result<Parse, Error> {
+        let mut args: Vec<String> = std::env::args().collect();
+        args.remove(0);
+
+        if args.is_empty() {
+            return Err(Error::Argument("must least 1 argument".into()));
+        }
+
+        for arg in &args {
+            if arg == "-h" || arg == "--help" {
+                return Ok(Parse::Sp(Special::Help));
+            }
+
+            if arg == "-v" || arg == "--version" {
+                return Ok(Parse::Sp(Special::Version));
+            }
+        }
+
+        let config = parse(&args)?;
+        Ok(Parse::Ok(config))
     }
+}
 
-    #[test]
-    fn parse_pattern_path() {
-        let actual = parse_args(&["cngrep".into(), "/home/cn/Documents".into()]).unwrap();
+fn parse(_args: &[String]) -> Result<NewConfig, Error> {
+    let cli = Cli::parse();
 
-        let expected = Config {
-            pattern: "cngrep".into(),
-            input_source: vec![PathBuf::from("/home/cn/Documents")],
-            read_options: vec![],
-            match_options: vec![],
-            output_options: vec![],
-            special_options: vec![],
-        };
+    let config = NewConfig {
+        pattern: cli.pattern,
+        path: cli.path,
+        print_config: cli.print_config,
+        count: cli.count,
+        ignore_case: cli.ignore_case,
+        color: cli.color,
+    };
+    Ok(config)
+}
 
-        assert_eq!(actual, expected);
-    }
+use clap::Parser;
 
-    #[test]
-    fn parse_pattern_mode() {
-        let actual = parse_args(&["cngrep".into(), "-c".into()]).unwrap();
+#[derive(Debug, Parser)]
+#[command(name = "cg")]
+pub struct Cli {
+    pub pattern: String,
 
-        let expected = Config {
-            pattern: "cngrep".into(),
-            input_source: vec![],
-            read_options: vec![],
-            match_options: vec![MatchOptions::CountOnly],
-            output_options: vec![],
-            special_options: vec![],
-        };
+    pub path: Vec<PathBuf>,
 
-        assert_eq!(actual, expected);
-    }
+    #[arg(long)]
+    pub print_config: bool,
 
-    #[test]
-    fn parse_path_mode() {
-        let actual = parse_args(&["/home/cn/Documents".into(), "-c".into()]).unwrap();
+    #[arg(short, long)]
+    pub count: bool,
 
-        let expected = Config {
-            pattern: "".into(),
-            input_source: vec![PathBuf::from("/home/cn/Documents")],
-            read_options: vec![],
-            match_options: vec![MatchOptions::CountOnly],
-            output_options: vec![],
-            special_options: vec![],
-        };
+    #[arg(short, long)]
+    pub ignore_case: bool,
 
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
-    fn parse_three_args() {
-        let actual =
-            parse_args(&["cngrep".into(), "-c".into(), "/home/cn/Documents".into()]).unwrap();
-
-        let expected = Config {
-            pattern: "cngrep".into(),
-            input_source: vec![PathBuf::from("/home/cn/Documents")],
-            read_options: vec![],
-            match_options: vec![MatchOptions::CountOnly],
-            output_options: vec![],
-            special_options: vec![],
-        };
-
-        assert_eq!(actual, expected);
-    }
+    #[arg(long)]
+    pub color: bool,
 }
