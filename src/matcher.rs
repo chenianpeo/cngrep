@@ -37,6 +37,7 @@ pub fn new_search(
                     let normal = ignore_case(stdin_lock, None, pattern, mode)?;
                     SearchResult::Normal(vec![normal])
                 }
+                _ => return Err(Error::UnFinished),
             }
         }
 
@@ -57,6 +58,8 @@ pub fn new_search(
                     let normal = ignore_case(reader, Some(file.clone()), pattern, mode)?;
                     SearchResult::Normal(vec![normal])
                 }
+
+                _ => return Err(Error::UnFinished),
             }
         }
 
@@ -86,6 +89,8 @@ pub fn new_search(
                             dir_normal.push(normal);
                         }
                     }
+
+                    _ => return Err(Error::UnFinished),
                 }
             }
 
