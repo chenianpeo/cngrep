@@ -17,6 +17,7 @@ pub struct Config {
     pub count: bool,
     pub ignore_case: bool,
     pub color: bool,
+    pub line_no: bool,
 }
 
 #[derive(Debug)]
@@ -65,6 +66,7 @@ fn parse(_args: &[String]) -> Result<Config, Error> {
         count: cli.count,
         ignore_case: cli.ignore_case,
         color: cli.color,
+        line_no: cli.line_no
     };
     Ok(config)
 }
@@ -89,4 +91,7 @@ pub struct Cli {
 
     #[arg(long)]
     pub color: bool,
+
+    #[arg(long = "line-number")]
+    pub line_no: bool
 }
