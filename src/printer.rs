@@ -61,28 +61,46 @@ pub struct CountResult {
     pub number: usize,
 }
 
-pub fn output_result(result: &SearchResult) -> Result<(), Error> {
+pub fn output_result(result: &SearchResult, color: bool) -> Result<(), Error> {
     let stdout = io::stdout();
     let mut writer = stdout.lock();
 
     match result {
-        SearchResult::Normal(normals) => render(normals, &mut writer)?,
-        SearchResult::Count(counts) => render_count(counts, &mut writer)?
+        SearchResult::Normal(normals) => render(normals, &mut writer, color)?,
+        SearchResult::Count(counts) => render_count(counts, &mut writer, color)?,
     }
 
     Ok(())
 }
 
-pub fn render<W: Write>(normals: &[NormalResult], writer: &mut W) -> Result<(), Error> {
+pub fn render<W: Write>(
+    normals: &[NormalResult],
+    writer: &mut W,
+    color: bool,
+) -> Result<(), Error> {
     for (no, normal) in normals.iter().enumerate() {
         if let Some(path) = &normal.path
             && normals.len() != 1
         {
-            writeln!(writer, "{}", path.display())?;
+            if color {
+                writeln!(writer, "{}", path.display().yellow())?;
+            } else {
+                writeln!(writer, "{}", path.display())?;
+            }
         }
 
         for single in &normal.matches {
-            writeln!(writer, "{}:{}", (single.line_num + 1), single.content)?;
+            if color {
+                let content = &single.content[single.range.start..single.range.end];
+                writeln!(
+                    writer,
+                    "{}:{}",
+                    (single.line_num + 1).blue(),
+                    single.content.replace(content, &content.green())
+                )?
+            } else {
+                writeln!(writer, "{}:{}", (single.line_num + 1), single.content)?;
+            }
         }
 
         if no < normals.len() - 1 {
@@ -93,12 +111,26 @@ pub fn render<W: Write>(normals: &[NormalResult], writer: &mut W) -> Result<(), 
     Ok(())
 }
 
-pub fn render_count<W: Write>(counts: &[CountResult], writer: &mut W) -> Result<(), Error> {
-    for count in counts {
-        if let Some(path) = &count.path {
-            writeln!(writer, "{}: {}", path.display(), count.number)?;
-        } else {
-            writeln!(writer, "{}", count.number)?;
+pub fn render_count<W: Write>(
+    counts: &[CountResult],
+    writer: &mut W,
+    _color: bool,
+) -> Result<(), Error> {
+    if _color {
+        for count in counts {
+            if let Some(path) = &count.path {
+                writeln!(writer, "{}: {}", path.display().yellow(), count.number)?;
+            } else {
+                writeln!(writer, "{}", count.number)?;
+            }
+        }
+    } else {
+        for count in counts {
+            if let Some(path) = &count.path {
+                writeln!(writer, "{}: {}", path.display(), count.number)?;
+            } else {
+                writeln!(writer, "{}", count.number)?;
+            }
         }
     }
 

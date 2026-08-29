@@ -116,7 +116,7 @@ fn run() -> Result<(), Error> {
 
     let search_result = new_search(&config.pattern, &read_result, &mode)?;
 
-    output_result(&search_result)?;
+    output_result(&search_result, config.color)?;
 
     Ok(())
 }
