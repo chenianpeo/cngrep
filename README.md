@@ -7,7 +7,6 @@ Currently, cngrep supports:
 - Search text in a single or multiple file and recursive directory
 - Search from standard input
 - Match options include count only and ignore case
-- Output options include output file
 - Special options include help information, version and print args config
 
 ## Build

@@ -2,18 +2,19 @@ Usage:
     cngrep [OPTIONS] <PATTERN> [PATH]
 
 Arguments:
-    <PATTERN>   Search pattern
-    [PATH]      File or directory to search
+    <PATTERN>   search pattern
+    [PATH]      file or directory to search
 
 Match Options:
-    -c, --count             Count matches only
-    -i, --ignore-case       Ignore case search
+    --count, -c             count matches only
+    --ignore-case, -i       ignore case search
 
 Output Options:
+    --color                 color print
 
 Read Options:
 
 Special Options:
-    -h, --help              Display help information
-    -p, --print-config      Print arguments config
-    -v, --version           Print software version
+    --help, -h              display help information
+    --print-config, -p      print arguments config
+    --version, -v           print software version
