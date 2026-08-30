@@ -9,15 +9,14 @@ pub enum MatchOptions {
     IgnoreAndCount,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Config {
     pub pattern: String,
     pub path: Vec<PathBuf>,
     pub print_config: bool,
-    pub count: bool,
-    pub ignore_case: bool,
     pub color: bool,
     pub line_no: bool,
+    pub match_mode: MatchOptions,
 }
 
 #[derive(Debug)]
@@ -59,14 +58,22 @@ impl Parse {
 fn parse(_args: &[String]) -> Result<Config, Error> {
     let cli = Cli::parse();
 
+    let mut mode = MatchOptions::Normal;
+    if cli.count && cli.ignore_case {
+        mode = MatchOptions::IgnoreAndCount
+    } else if cli.ignore_case {
+        mode = MatchOptions::IgnoreCase
+    } else if cli.count {
+        mode = MatchOptions::CountOnly
+    }
+
     let config = Config {
         pattern: cli.pattern,
         path: cli.path,
         print_config: cli.print_config,
-        count: cli.count,
-        ignore_case: cli.ignore_case,
         color: cli.color,
         line_no: cli.line_no,
+        match_mode: mode,
     };
     Ok(config)
 }

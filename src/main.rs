@@ -1,4 +1,3 @@
-use cg::cli::MatchOptions;
 use cg::cli::Parse;
 use cg::cli::Special;
 use cg::error::Error;
@@ -12,23 +11,16 @@ fn main() -> ExitCode {
     match run() {
         Ok(_) => ExitCode::from(0),
 
-        Err(Error::NotFound) => {
-            eprintln!("Not Found");
-            ExitCode::from(1)
-        }
-
         Err(err) => {
             eprintln!("{err}");
-            ExitCode::from(2)
+            ExitCode::from(1)
         }
     }
 }
 
 /// logical flow
 fn run() -> Result<(), Error> {
-    let args = Parse::build()?;
-
-    let config = match args {
+    let config = match Parse::build()? {
         Parse::Special(special) => {
             match special {
                 Special::Help => new_help(),
@@ -49,16 +41,7 @@ fn run() -> Result<(), Error> {
     use cg::reader::read;
     let read_result = read(&config.path)?;
 
-    let mut mode = MatchOptions::Normal;
-    if config.count && config.ignore_case {
-        mode = MatchOptions::IgnoreAndCount
-    } else if config.ignore_case {
-        mode = MatchOptions::IgnoreCase
-    } else if config.count {
-        mode = MatchOptions::CountOnly
-    }
-
-    let search_result = search(&config.pattern, &read_result, &mode)?;
+    let search_result = search(&config.pattern, &read_result, &config.match_mode)?;
 
     output_result(&search_result, config.color)?;
 
