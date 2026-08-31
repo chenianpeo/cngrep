@@ -1,4 +1,9 @@
-use std::{env, fs::read_dir, io::IsTerminal, path::PathBuf};
+use std::{
+    env,
+    fs::{File, read_dir},
+    io::{IsTerminal, Read},
+    path::{Path, PathBuf},
+};
 
 use crate::error::Error;
 
@@ -23,6 +28,8 @@ pub fn read(input_source: &[PathBuf]) -> Result<ReadResult, Error> {
     } else if input_source.len() == 1 {
         if input_source[0].is_dir() {
             Ok(ReadResult::MultiFile(recursive_path(input_source)?))
+        } else if is_binary(&input_source[0])? {
+            Err(Error::UnFinished)
         } else {
             Ok(ReadResult::File(input_source[0].clone()))
         }
@@ -36,13 +43,7 @@ fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
 
     for path in paths {
         if path.is_file() {
-            let path_str = path.to_str().ok_or(Error::NotFound)?;
-
-            if path_str.ends_with(".pdf")
-                || path_str.ends_with(".epub")
-                || path_str.ends_with(".png")
-                || path_str.ends_with(".xls")
-            {
+            if is_binary(path)? {
                 continue;
             }
 
@@ -77,4 +78,16 @@ fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     }
 
     Ok(result)
+}
+
+fn is_binary(path: &Path) -> Result<bool, Error> {
+    let mut file = File::open(path)?;
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)?;
+    Ok(buf.contains(&0) || std::str::from_utf8(&buf).is_err())
+}
+
+#[warn(unused_variables)]
+fn _exclude(_path: &PathBuf) -> bool {
+    true
 }

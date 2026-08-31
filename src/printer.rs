@@ -48,7 +48,6 @@ pub struct Match {
     pub range: Range,
 }
 
-// public range struct
 #[derive(Debug)]
 pub struct Range {
     pub start: usize,
@@ -59,6 +58,12 @@ pub struct Range {
 pub struct CountResult {
     pub path: Option<PathBuf>,
     pub number: usize,
+}
+
+#[derive(Debug)]
+pub enum OutputMode {
+    Color,
+    LineNum,
 }
 
 pub fn output_result(result: &SearchResult, color: bool) -> Result<(), Error> {

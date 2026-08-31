@@ -97,6 +97,7 @@ fn normal<R: BufRead>(
 ) -> Result<NormalResult, Error> {
     let mut matches: Vec<Match> = Vec::new();
     for (line_no, line) in reader.lines().enumerate() {
+        // appear error if encounter binary file
         let line = line?;
 
         if let Some(index) = line.find(pattern) {
