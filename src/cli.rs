@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::{error::Error, printer::OutputMode};
 use std::path::PathBuf;
 
 #[derive(Debug, PartialEq)]
@@ -14,9 +14,8 @@ pub struct Config {
     pub pattern: String,
     pub path: Vec<PathBuf>,
     pub print_config: bool,
-    pub color: bool,
-    pub line_no: bool,
     pub match_mode: MatchOptions,
+    pub output_mode: OutputMode,
 }
 
 #[derive(Debug)]
@@ -67,13 +66,17 @@ fn parse(_args: &[String]) -> Result<Config, Error> {
         mode = MatchOptions::CountOnly
     }
 
+    let output_mode = OutputMode {
+        color: cli.color,
+        line_num: cli.line_num,
+    };
+
     let config = Config {
         pattern: cli.pattern,
         path: cli.path,
         print_config: cli.print_config,
-        color: cli.color,
-        line_no: cli.line_no,
         match_mode: mode,
+        output_mode,
     };
     Ok(config)
 }
@@ -100,5 +103,5 @@ pub struct Cli {
     pub color: bool,
 
     #[arg(long = "line-number")]
-    pub line_no: bool,
+    pub line_num: bool,
 }

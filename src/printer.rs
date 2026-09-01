@@ -61,18 +61,18 @@ pub struct CountResult {
 }
 
 #[derive(Debug)]
-pub enum OutputMode {
-    Color,
-    LineNum,
+pub struct OutputMode {
+    pub color: bool,
+    pub line_num: bool,
 }
 
-pub fn output_result(result: &SearchResult, color: bool) -> Result<(), Error> {
+pub fn output_result(result: &SearchResult, mode: &OutputMode) -> Result<(), Error> {
     let stdout = io::stdout();
     let mut writer = stdout.lock();
 
     match result {
-        SearchResult::Normal(normals) => render(normals, &mut writer, color)?,
-        SearchResult::Count(counts) => render_count(counts, &mut writer, color)?,
+        SearchResult::Normal(normals) => render(normals, &mut writer, mode)?,
+        SearchResult::Count(counts) => render_count(counts, &mut writer, mode)?,
     }
 
     Ok(())
@@ -81,13 +81,13 @@ pub fn output_result(result: &SearchResult, color: bool) -> Result<(), Error> {
 pub fn render<W: Write>(
     normals: &[NormalResult],
     writer: &mut W,
-    color: bool,
+    mode: &OutputMode,
 ) -> Result<(), Error> {
     for (no, normal) in normals.iter().enumerate() {
         if let Some(path) = &normal.path
             && normals.len() != 1
         {
-            if color {
+            if mode.color {
                 writeln!(writer, "{}", path.display().yellow())?;
             } else {
                 writeln!(writer, "{}", path.display())?;
@@ -95,7 +95,7 @@ pub fn render<W: Write>(
         }
 
         for single in &normal.matches {
-            if color {
+            if mode.color {
                 let content = &single.content[single.range.start..single.range.end];
                 writeln!(
                     writer,
@@ -119,9 +119,9 @@ pub fn render<W: Write>(
 pub fn render_count<W: Write>(
     counts: &[CountResult],
     writer: &mut W,
-    _color: bool,
+    mode: &OutputMode,
 ) -> Result<(), Error> {
-    if _color {
+    if mode.color {
         for count in counts {
             if let Some(path) = &count.path {
                 writeln!(writer, "{}: {}", path.display().yellow(), count.number)?;

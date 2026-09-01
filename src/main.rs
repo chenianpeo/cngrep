@@ -43,7 +43,7 @@ fn run() -> Result<(), Error> {
 
     let search_result = search(&config.pattern, &read_result, &config.match_mode)?;
 
-    output_result(&search_result, config.color)?;
+    output_result(&search_result, &config.output_mode)?;
 
     Ok(())
 }

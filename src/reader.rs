@@ -71,11 +71,6 @@ fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     Ok(result)
 }
 
-pub struct PrintFilter {
-    pub binary: bool,
-    pub exclude: bool,
-}
-
 fn is_binary(path: &Path) -> Result<bool, Error> {
     let mut file = File::open(path)?;
     let mut buf = Vec::new();
