@@ -55,21 +55,12 @@ fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
         if path.is_dir() {
             let dir_path = read_dir(path)?;
 
-            'inner: for entry in dir_path {
+            for entry in dir_path {
                 let entry = entry?;
                 let single_path = entry.path();
 
-                let path_str = single_path.to_str().ok_or(Error::NotFound)?;
-                let path_single_str: Vec<&str> = path_str.split('/').collect();
-
-                for single_str in path_single_str {
-                    if single_str.starts_with('.') {
-                        continue 'inner;
-                    }
-
-                    if single_str.contains("target") {
-                        continue 'inner;
-                    }
+                if is_exclude(&single_path)? {
+                    continue;
                 }
 
                 result.extend(recursive_path(&[single_path])?);
@@ -80,6 +71,11 @@ fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     Ok(result)
 }
 
+pub struct PrintFilter {
+    pub binary: bool,
+    pub exclude: bool,
+}
+
 fn is_binary(path: &Path) -> Result<bool, Error> {
     let mut file = File::open(path)?;
     let mut buf = Vec::new();
@@ -87,7 +83,20 @@ fn is_binary(path: &Path) -> Result<bool, Error> {
     Ok(buf.contains(&0) || std::str::from_utf8(&buf).is_err())
 }
 
-#[warn(unused_variables)]
-fn _exclude(_path: &PathBuf) -> bool {
-    true
+fn is_exclude(path: &Path) -> Result<bool, Error> {
+    let components = path.components();
+
+    use std::ffi::OsStr;
+
+    for component in components.as_path() {
+        if component.to_string_lossy().starts_with(".") {
+            return Ok(true);
+        }
+
+        if component == OsStr::new("target") {
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
 }
