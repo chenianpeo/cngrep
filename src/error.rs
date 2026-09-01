@@ -39,3 +39,46 @@ impl std::fmt::Display for Error {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn err_args() {
+        let err = Error::Argument("invalid arguments".into());
+        assert_eq!(err.to_string(), "invalid arguments");
+    }
+
+    #[test]
+    fn err_match() {
+        let err = Error::Match("invalid match".into());
+        assert_eq!(err.to_string(), "invalid match");
+    }
+
+    #[test]
+    fn err_not_found() {
+        let err = Error::NotFound;
+        assert_eq!(err.to_string(), "not found");
+    }
+
+    #[test]
+    fn err_unfinished() {
+        let err = Error::UnFinished;
+        assert_eq!(err.to_string(), "unfinished");
+    }
+
+    #[test]
+    fn err_io() {
+        let io_err = io::Error::new(io::ErrorKind::PermissionDenied, "permission denied");
+        let err = Error::Io(io_err);
+        assert_eq!(err.to_string(), "permission denied");
+    }
+
+    #[test]
+    fn err_io_switch() {
+        let io_err = io::Error::new(io::ErrorKind::NotFound, "file not found");
+        let err: Error = io_err.into();
+        assert_eq!(err.to_string(), "file not found");
+    }
+}
