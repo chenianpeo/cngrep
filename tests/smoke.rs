@@ -30,6 +30,7 @@ fn smoke_test_stdin() {
 
     let output = child.wait_with_output().expect("failed to wait for cg");
     assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "2:rust is good\n");
 }
 
 #[test]
@@ -63,10 +64,30 @@ fn smoke_test_file() {
         .expect("failed to execute cg file ignore count");
 
     remove_file(path).expect("remove file error");
+
     assert!(output_normal.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output_normal.stdout),
+        "1:hello world\n"
+    );
+
     assert!(output_ignore.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output_ignore.stdout),
+        "1:hello world\n2:Hello World\n"
+    );
+
     assert!(output_count.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output_count.stdout),
+        "./tests/test_file.txt: 1\n"
+    );
+
     assert!(output_ignore_count.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output_ignore_count.stdout),
+        "./tests/test_file.txt: 2\n"
+    );
 }
 
 fn new_dir(path: &str, content: Vec<&str>) {
@@ -111,8 +132,28 @@ fn smoke_test_dir() {
         .expect("failed to execute cg file ignore count");
 
     remove_dir_all(path_1).expect("remove dir error");
+
     assert!(output_normal.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output_normal.stdout),
+        "tests/test_dir_1/test_file_0\n1:hello world\n\ntests/test_dir_1/test_file_1\n1:hello Rust\n"
+    );
+
     assert!(output_ignore.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output_ignore.stdout),
+        "tests/test_dir_1/test_file_0\n1:hello world\n2:Hello World\n\ntests/test_dir_1/test_file_1\n1:hello Rust\n2:Hello rust\n"
+    );
+
     assert!(output_count.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output_count.stdout),
+        "tests/test_dir_1/test_file_0: 1\ntests/test_dir_1/test_file_1: 1\n"
+    );
+
     assert!(output_ignore_count.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output_ignore_count.stdout),
+        "tests/test_dir_1/test_file_0: 2\ntests/test_dir_1/test_file_1: 2\n"
+    );
 }
