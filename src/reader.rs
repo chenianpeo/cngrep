@@ -1,11 +1,11 @@
 use std::{
-    env,
+    env::{self, current_dir},
     fs::{File, read_dir},
-    io::{IsTerminal, Read},
+    io::{self, IsTerminal, Read},
     path::{Path, PathBuf},
 };
 
-use crate::error::Error;
+use crate::{error::Error, reader::Input::MultiFile};
 
 #[derive(Debug, PartialEq)]
 pub enum ReadResult {
@@ -71,6 +71,8 @@ fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     Ok(result)
 }
 
+/// analyze input path file types
+/// performance loss is quite serious due to read total files
 fn is_binary(path: &Path) -> Result<bool, Error> {
     let mut file = File::open(path)?;
     let mut buf = Vec::new();
@@ -78,6 +80,7 @@ fn is_binary(path: &Path) -> Result<bool, Error> {
     Ok(buf.contains(&0) || std::str::from_utf8(&buf).is_err())
 }
 
+/// exclude file and directory
 fn is_exclude(path: &Path) -> Result<bool, Error> {
     let components = path.components();
 
@@ -94,4 +97,37 @@ fn is_exclude(path: &Path) -> Result<bool, Error> {
     }
 
     Ok(false)
+}
+
+#[derive(Debug)]
+pub enum Input {
+    Stdin,
+    MultiFile(Vec<PathBuf>),
+}
+
+pub fn new_read(path: &[PathBuf]) -> Result<Input, Error> {
+    let stdin = io::stdin();
+    if !stdin.is_terminal() {
+        return Ok(Input::Stdin);
+    }
+
+    if stdin.is_terminal() && path.is_empty() {
+        return Ok(Input::MultiFile(recursive_path(&[current_dir()?])?));
+    }
+
+    if let Some(file) = path.first()
+        && file.is_file()
+        && path.len() == 1
+    {
+        return Ok(MultiFile(vec![file.to_path_buf()]));
+    }
+
+    if let Some(dir) = path.first()
+        && dir.is_dir()
+        && path.len() == 1
+    {
+        return Ok(MultiFile(recursive_path(std::slice::from_ref(dir))?));
+    }
+
+    Ok(MultiFile(recursive_path(path)?))
 }
