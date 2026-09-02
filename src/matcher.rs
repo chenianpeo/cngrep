@@ -6,28 +6,24 @@ use std::{
 
 use crate::{
     cli::MatchOptions,
+    common::Range,
     error::Error,
     printer::{
-        CountResult, Match, NormalResult, Range,
+        CountResult, Match, NormalResult,
         SearchResult::{self},
     },
-    reader::ReadResult,
+    reader::Input,
 };
 
 pub fn search(
     pattern: &str,
-    read_result: &ReadResult,
+    read_result: &Input,
     mode: &MatchOptions,
 ) -> Result<SearchResult, Error> {
     Ok(match read_result {
-        ReadResult::Stdin => matcher(pattern, io::stdin().lock(), None, mode)?,
+        Input::Stdin => matcher(pattern, io::stdin().lock(), None, mode)?,
 
-        ReadResult::File(file) => {
-            let reader = BufReader::new(File::open(file)?);
-            matcher(pattern, reader, Some(file.clone()), mode)?
-        }
-
-        ReadResult::MultiFile(files) => search_files(files, pattern, mode)?,
+        Input::MultiFile(files) => search_files(files, pattern, mode)?,
     })
 }
 

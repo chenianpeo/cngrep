@@ -1,42 +1,11 @@
 use std::{
-    env::{self, current_dir},
+    env::current_dir,
     fs::{File, read_dir},
     io::{self, IsTerminal, Read},
     path::{Path, PathBuf},
 };
 
 use crate::{error::Error, reader::Input::MultiFile};
-
-#[derive(Debug, PartialEq)]
-pub enum ReadResult {
-    Stdin,
-    File(PathBuf),
-    MultiFile(Vec<PathBuf>),
-}
-
-pub fn read(input_source: &[PathBuf]) -> Result<ReadResult, Error> {
-    if input_source.is_empty() {
-        let stdin = std::io::stdin();
-
-        if stdin.is_terminal() {
-            Ok(ReadResult::MultiFile(recursive_path(&[
-                env::current_dir()?
-            ])?))
-        } else {
-            Ok(ReadResult::Stdin)
-        }
-    } else if input_source.len() == 1 {
-        if input_source[0].is_dir() {
-            Ok(ReadResult::MultiFile(recursive_path(input_source)?))
-        } else if is_binary(&input_source[0])? {
-            Err(Error::UnFinished)
-        } else {
-            Ok(ReadResult::File(input_source[0].clone()))
-        }
-    } else {
-        Ok(ReadResult::MultiFile(recursive_path(input_source)?))
-    }
-}
 
 fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
@@ -105,7 +74,7 @@ pub enum Input {
     MultiFile(Vec<PathBuf>),
 }
 
-pub fn new_read(path: &[PathBuf]) -> Result<Input, Error> {
+pub fn read(path: &[PathBuf]) -> Result<Input, Error> {
     let stdin = io::stdin();
     if !stdin.is_terminal() {
         return Ok(Input::Stdin);

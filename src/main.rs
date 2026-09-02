@@ -3,6 +3,7 @@ use cg::cli::Special;
 use cg::error::Error;
 use cg::matcher::search;
 use cg::printer::output_result;
+use cg::reader::read;
 
 use std::process::ExitCode;
 
@@ -38,7 +39,6 @@ fn run() -> Result<(), Error> {
         return Ok(());
     }
 
-    use cg::reader::read;
     let read_result = read(&config.path)?;
 
     let search_result = search(&config.pattern, &read_result, &config.match_mode)?;
