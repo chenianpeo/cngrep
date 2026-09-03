@@ -41,7 +41,7 @@ fn run() -> Result<(), Error> {
 
     let read_result = read(&config.path)?;
 
-    let search_result = search(&config.pattern, &read_result, &config.match_mode)?;
+    let search_result = search(&config.pattern, &read_result, &config.new_match_mode)?;
 
     output_result(&search_result, &config.output_mode)?;
 

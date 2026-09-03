@@ -10,12 +10,19 @@ pub enum MatchOptions {
 }
 
 #[derive(Debug)]
+pub struct MatchMode {
+    pub count: bool,
+    pub ignore_case: bool,
+}
+
+#[derive(Debug)]
 pub struct Config {
     pub pattern: String,
     pub path: Vec<PathBuf>,
     pub print_config: bool,
     pub match_mode: MatchOptions,
     pub output_mode: OutputMode,
+    pub new_match_mode: MatchMode,
 }
 
 #[derive(Debug)]
@@ -71,12 +78,18 @@ fn parse(_args: &[String]) -> Result<Config, Error> {
         line_num: cli.line_num,
     };
 
+    let match_mode = MatchMode {
+        count: cli.count,
+        ignore_case: cli.ignore_case,
+    };
+
     let config = Config {
         pattern: cli.pattern,
         path: cli.path,
         print_config: cli.print_config,
         match_mode: mode,
         output_mode,
+        new_match_mode: match_mode,
     };
     Ok(config)
 }
