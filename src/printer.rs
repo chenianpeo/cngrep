@@ -1,34 +1,10 @@
-use std::io;
-use std::io::Write;
-use std::path::PathBuf;
+use std::{io, io::Write};
 
-use crate::common::{Color, Range};
-use crate::error::Error;
-
-#[derive(Debug)]
-pub enum SearchResult {
-    Normal(Vec<NormalResult>),
-    Count(Vec<CountResult>),
-}
-
-#[derive(Debug)]
-pub struct NormalResult {
-    pub path: Option<PathBuf>,
-    pub matches: Vec<Match>,
-}
-
-#[derive(Debug)]
-pub struct Match {
-    pub line_num: usize,
-    pub content: String,
-    pub range: Range,
-}
-
-#[derive(Debug)]
-pub struct CountResult {
-    pub path: Option<PathBuf>,
-    pub number: usize,
-}
+use crate::{
+    common::Color,
+    error::Error,
+    matcher::{CountResult, NormalResult, SearchResult},
+};
 
 #[derive(Debug)]
 pub struct OutputMode {
@@ -36,7 +12,7 @@ pub struct OutputMode {
     pub line_num: bool,
 }
 
-pub fn output_result(result: &SearchResult, mode: &OutputMode) -> Result<(), Error> {
+pub fn output(result: &SearchResult, mode: &OutputMode) -> Result<(), Error> {
     let stdout = io::stdout();
     let mut writer = stdout.lock();
 

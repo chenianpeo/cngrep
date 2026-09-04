@@ -6,21 +6,43 @@ use std::{
     vec,
 };
 
-use crate::{
-    cli::MatchMode,
-    common::Range,
-    error::Error,
-    printer::{
-        CountResult, Match, NormalResult,
-        SearchResult::{self},
-    },
-    reader::Input,
-};
+use crate::{common::Range, error::Error, reader::Input};
+
+#[derive(Debug)]
+pub struct MatchMode {
+    pub count: bool,
+    pub ignore_case: bool,
+}
 
 #[derive(Debug)]
 pub enum MatchResult {
     Normal(NormalResult),
     Count(CountResult),
+}
+
+#[derive(Debug)]
+pub enum SearchResult {
+    Normal(Vec<NormalResult>),
+    Count(Vec<CountResult>),
+}
+
+#[derive(Debug)]
+pub struct NormalResult {
+    pub path: Option<PathBuf>,
+    pub matches: Vec<Match>,
+}
+
+#[derive(Debug)]
+pub struct Match {
+    pub line_num: usize,
+    pub content: String,
+    pub range: Range,
+}
+
+#[derive(Debug)]
+pub struct CountResult {
+    pub path: Option<PathBuf>,
+    pub number: usize,
 }
 
 pub fn search(pattern: &str, read_result: &Input, mode: &MatchMode) -> Result<SearchResult, Error> {

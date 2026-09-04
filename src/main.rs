@@ -1,11 +1,12 @@
-use cg::cli::Parse;
-use cg::cli::Special;
-use cg::error::Error;
-use cg::matcher::search;
-use cg::printer::output_result;
-use cg::reader::read;
-
 use std::process::ExitCode;
+
+use cg::{
+    cli::{Parse, Special},
+    error::Error,
+    matcher::search,
+    printer::output,
+    reader::read,
+};
 
 /// entry point
 fn main() -> ExitCode {
@@ -43,7 +44,7 @@ fn run() -> Result<(), Error> {
 
     let search_result = search(&config.pattern, &read_result, &config.new_match_mode)?;
 
-    output_result(&search_result, &config.output_mode)?;
+    output(&search_result, &config.output_mode)?;
 
     Ok(())
 }

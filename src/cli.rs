@@ -1,5 +1,6 @@
-use crate::{error::Error, printer::OutputMode};
 use std::path::PathBuf;
+
+use crate::{error::Error, matcher::MatchMode, printer::OutputMode};
 
 #[derive(Debug)]
 pub enum Parse {
@@ -20,12 +21,6 @@ pub struct Config {
     pub print_config: bool,
     pub output_mode: OutputMode,
     pub new_match_mode: MatchMode,
-}
-
-#[derive(Debug)]
-pub struct MatchMode {
-    pub count: bool,
-    pub ignore_case: bool,
 }
 
 impl Parse {
