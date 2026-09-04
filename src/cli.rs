@@ -91,6 +91,6 @@ pub struct Cli {
     #[arg(long)]
     pub color: bool,
 
-    #[arg(long = "line-number")]
+    #[arg(short = 'n', long = "line-num")]
     pub line_num: bool,
 }

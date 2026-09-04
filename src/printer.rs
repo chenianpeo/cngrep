@@ -41,17 +41,24 @@ pub fn render<W: Write>(
         }
 
         for single in &normal.matches {
+            let mut line: String;
+            let line_num: String;
+
             if mode.color {
                 let content = &single.content[single.range.start..single.range.end];
-                writeln!(
-                    writer,
-                    "{}:{}",
-                    (single.line_num + 1).blue(),
-                    single.content.replace(content, &content.green())
-                )?
+
+                line = single.content.replace(content, &content.green());
+                line_num = (single.line_num + 1).blue().to_string();
             } else {
-                writeln!(writer, "{}:{}", (single.line_num + 1), single.content)?;
+                line = single.content.to_string();
+                line_num = format!("{}", single.line_num + 1);
             }
+
+            if mode.line_num {
+                line = format!("{}:{}", line_num, line);
+            }
+
+            writeln!(writer, "{}", line)?;
         }
 
         if no < normals.len() - 1 {
@@ -67,22 +74,18 @@ pub fn render_count<W: Write>(
     writer: &mut W,
     mode: &OutputMode,
 ) -> Result<(), Error> {
-    if mode.color {
-        for count in counts {
-            if let Some(path) = &count.path {
-                writeln!(writer, "{}: {}", path.display().yellow(), count.number)?;
-            } else {
-                writeln!(writer, "{}", count.number)?;
-            }
+    for count in counts {
+        let mut path = if let Some(path) = &count.path {
+            format!("{}:", path.display())
+        } else {
+            String::new()
+        };
+
+        if mode.color {
+            path = path.yellow()
         }
-    } else {
-        for count in counts {
-            if let Some(path) = &count.path {
-                writeln!(writer, "{}: {}", path.display(), count.number)?;
-            } else {
-                writeln!(writer, "{}", count.number)?;
-            }
-        }
+
+        writeln!(writer, "{}{}", path, count.number)?;
     }
 
     Ok(())
