@@ -1,30 +1,6 @@
 use crate::{error::Error, printer::OutputMode};
 use std::path::PathBuf;
 
-#[derive(Debug, PartialEq)]
-pub enum MatchOptions {
-    Normal,
-    CountOnly,
-    IgnoreCase,
-    IgnoreAndCount,
-}
-
-#[derive(Debug)]
-pub struct MatchMode {
-    pub count: bool,
-    pub ignore_case: bool,
-}
-
-#[derive(Debug)]
-pub struct Config {
-    pub pattern: String,
-    pub path: Vec<PathBuf>,
-    pub print_config: bool,
-    pub match_mode: MatchOptions,
-    pub output_mode: OutputMode,
-    pub new_match_mode: MatchMode,
-}
-
 #[derive(Debug)]
 pub enum Parse {
     Ok(Config),
@@ -35,6 +11,21 @@ pub enum Parse {
 pub enum Special {
     Help,
     Version,
+}
+
+#[derive(Debug)]
+pub struct Config {
+    pub pattern: String,
+    pub path: Vec<PathBuf>,
+    pub print_config: bool,
+    pub output_mode: OutputMode,
+    pub new_match_mode: MatchMode,
+}
+
+#[derive(Debug)]
+pub struct MatchMode {
+    pub count: bool,
+    pub ignore_case: bool,
 }
 
 impl Parse {
@@ -64,15 +55,6 @@ impl Parse {
 fn parse(_args: &[String]) -> Result<Config, Error> {
     let cli = Cli::parse();
 
-    let mut mode = MatchOptions::Normal;
-    if cli.count && cli.ignore_case {
-        mode = MatchOptions::IgnoreAndCount
-    } else if cli.ignore_case {
-        mode = MatchOptions::IgnoreCase
-    } else if cli.count {
-        mode = MatchOptions::CountOnly
-    }
-
     let output_mode = OutputMode {
         color: cli.color,
         line_num: cli.line_num,
@@ -87,7 +69,6 @@ fn parse(_args: &[String]) -> Result<Config, Error> {
         pattern: cli.pattern,
         path: cli.path,
         print_config: cli.print_config,
-        match_mode: mode,
         output_mode,
         new_match_mode: match_mode,
     };
