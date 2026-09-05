@@ -30,3 +30,41 @@ pub struct Range {
     pub start: usize,
     pub end: usize,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn color_red() {
+        assert_eq!("test".red(), "\x1b[31mtest\x1b[0m");
+    }
+
+    #[test]
+    fn color_green() {
+        assert_eq!("test".green(), "\x1b[32mtest\x1b[0m");
+    }
+
+    #[test]
+    fn color_yellow() {
+        assert_eq!("test".yellow(), "\x1b[33mtest\x1b[0m");
+    }
+
+    #[test]
+    fn color_blue() {
+        assert_eq!("test".blue(), "\x1b[34mtest\x1b[0m");
+    }
+
+    #[test]
+    fn color_custom() {
+        assert_eq!("test".color(35), "\x1b[35mtest\x1b[0m");
+    }
+
+    #[test]
+    fn range_values() {
+        let range = Range { start: 1, end: 5 };
+
+        assert_eq!(range.start, 1);
+        assert_eq!(range.end, 5);
+    }
+}
