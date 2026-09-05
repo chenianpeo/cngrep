@@ -75,31 +75,37 @@ pub enum Input {
     MultiFile(Vec<PathBuf>),
 }
 
-pub fn read(path: &[PathBuf]) -> Result<Input, Error> {
+pub fn read(paths: &[PathBuf]) -> Result<Input, Error> {
     let stdin = io::stdin();
     if !stdin.is_terminal() {
         return Ok(Input::Stdin);
     }
 
-    if stdin.is_terminal() && path.is_empty() {
+    if stdin.is_terminal() && paths.is_empty() {
         return Ok(Input::MultiFile(recursive_path(&[current_dir()?])?));
     }
 
-    if let Some(file) = path.first()
+    for path in paths {
+        if !path.exists() {
+            return Err(Error::NotFound);
+        }
+    }
+
+    if let Some(file) = paths.first()
         && file.is_file()
-        && path.len() == 1
+        && paths.len() == 1
     {
         return Ok(MultiFile(vec![file.to_path_buf()]));
     }
 
-    if let Some(dir) = path.first()
+    if let Some(dir) = paths.first()
         && dir.is_dir()
-        && path.len() == 1
+        && paths.len() == 1
     {
         return Ok(MultiFile(recursive_path(std::slice::from_ref(dir))?));
     }
 
-    Ok(MultiFile(recursive_path(path)?))
+    Ok(MultiFile(recursive_path(paths)?))
 }
 
 #[cfg(test)]

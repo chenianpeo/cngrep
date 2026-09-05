@@ -13,7 +13,10 @@ fn main() -> ExitCode {
     match run() {
         Ok(_) => ExitCode::from(0),
 
-        Err(Error::NotFound) => ExitCode::from(1),
+        Err(Error::NotFound) => {
+            eprintln!("Not Found");
+            ExitCode::from(1)
+        }
 
         Err(err) => {
             eprintln!("{err}");
