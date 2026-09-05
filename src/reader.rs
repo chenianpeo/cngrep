@@ -37,6 +37,7 @@ fn recursive_path(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
         }
     }
 
+    result.sort();
     Ok(result)
 }
 
