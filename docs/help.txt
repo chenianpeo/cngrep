@@ -17,5 +17,5 @@ Read Options:
 
 Special Options:
     --help, -h              display help information
-    --print-config, -p      print arguments config
+    --print-config,         print arguments config
     --version, -v           print software version
