@@ -140,7 +140,7 @@ fn matchers(pattern: &str, files: &[PathBuf], mode: &MatchMode) -> Result<Search
         }
     }
 
-    if !normals.is_empty() {
+    if !mode.count {
         Ok(SearchResult::Normal(normals))
     } else {
         Ok(SearchResult::Count(counts))
