@@ -98,7 +98,7 @@ pub struct Cli {
 /// test config parse
 /// later, need complete cli parse
 #[cfg(test)]
-mod cli_tests {
+mod tests {
     use std::vec;
 
     use super::*;

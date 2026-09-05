@@ -41,7 +41,7 @@ impl std::fmt::Display for Error {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
