@@ -2,8 +2,8 @@ Usage:
     cngrep [OPTIONS] <PATTERN> [PATH]
 
 Arguments:
-    <PATTERN>   search pattern
-    [PATH]      file or directory to search
+    <PATTERN>               search pattern
+    [PATH]                  file or directory to search
 
 Match Options:
     --count, -c             count matches only
@@ -11,6 +11,7 @@ Match Options:
 
 Output Options:
     --color                 color print
+    --line-num, -n          print line number
 
 Read Options:
 
