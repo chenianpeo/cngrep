@@ -150,11 +150,7 @@ fn matchers(pattern: &str, files: &[PathBuf], mode: &MatchMode) -> Result<Search
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        fs,
-        io::Cursor,
-        path::PathBuf,
-    };
+    use std::{fs, io::Cursor, path::PathBuf};
 
     fn normal_mode() -> MatchMode {
         MatchMode {
@@ -324,13 +320,7 @@ mod tests {
         let reader = Cursor::new(input);
         let path = PathBuf::from("test.txt");
 
-        let result = matcher(
-            "hello",
-            reader,
-            Some(path.clone()),
-            &normal_mode(),
-        )
-        .unwrap();
+        let result = matcher("hello", reader, Some(path.clone()), &normal_mode()).unwrap();
 
         match result {
             MatchResult::Normal(result) => {
@@ -347,13 +337,7 @@ mod tests {
         let reader = Cursor::new(input);
         let path = PathBuf::from("test.txt");
 
-        let result = matcher(
-            "hello",
-            reader,
-            Some(path.clone()),
-            &count_mode(),
-        )
-        .unwrap();
+        let result = matcher("hello", reader, Some(path.clone()), &count_mode()).unwrap();
 
         match result {
             MatchResult::Count(result) => {
@@ -364,7 +348,6 @@ mod tests {
             MatchResult::Normal(_) => panic!("expected Count result"),
         }
     }
-
 
     #[test]
     fn search_multiple_files() {
@@ -431,11 +414,7 @@ mod tests {
         fs::write(&file2, "hello\nrust\nhello\n").unwrap();
         fs::write(&file3, "rust\n").unwrap();
 
-        let files = vec![
-            file1.clone(),
-            file2.clone(),
-            file3,
-        ];
+        let files = vec![file1.clone(), file2.clone(), file3];
 
         let result = matchers("hello", &files, &count_mode()).unwrap();
 
@@ -476,7 +455,6 @@ mod tests {
             SearchResult::Count(_) => panic!("expected Normal result"),
         }
     }
-
 
     #[test]
     fn search_normal_result() {
@@ -524,9 +502,7 @@ mod tests {
 
     #[test]
     fn search_missing_file() {
-        let input = Input::MultiFile(vec![
-            PathBuf::from("this_file_should_not_exist.txt"),
-        ]);
+        let input = Input::MultiFile(vec![PathBuf::from("this_file_should_not_exist.txt")]);
 
         let result = search("hello", &input, &normal_mode());
 

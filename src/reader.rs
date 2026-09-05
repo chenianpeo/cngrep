@@ -109,10 +109,7 @@ mod tests {
     use tempfile::Builder;
 
     fn tempdir() -> tempfile::TempDir {
-        Builder::new()
-            .prefix("cngrep-test-")
-            .tempdir()
-            .unwrap()
+        Builder::new().prefix("cngrep-test-").tempdir().unwrap()
     }
 
     #[test]
