@@ -25,9 +25,11 @@ pub struct Config {
 
 impl Parse {
     pub fn build() -> Result<Parse, Error> {
-        let mut args: Vec<String> = std::env::args().collect();
-        args.remove(0);
+        let args: Vec<String> = std::env::args().skip(1).collect();
+        Self::build_from(args)
+    }
 
+    fn build_from(args: Vec<String>) -> Result<Parse, Error> {
         if args.is_empty() {
             return Err(Error::Argument("must least 1 argument".into()));
         }
@@ -99,7 +101,7 @@ pub struct Cli {
 mod cli_tests {
     use std::vec;
 
-use super::*;
+    use super::*;
 
     #[test]
     fn test_parse_default() {
@@ -110,7 +112,7 @@ use super::*;
             count: false,
             ignore_case: false,
             color: false,
-            line_num: false
+            line_num: false,
         };
 
         let config = parse(cli).unwrap();
@@ -136,7 +138,7 @@ use super::*;
             count: false,
             ignore_case: false,
             color: false,
-            line_num: false
+            line_num: false,
         };
 
         let config = parse(cli).unwrap();
@@ -156,7 +158,7 @@ use super::*;
             count: false,
             ignore_case: false,
             color: false,
-            line_num: false
+            line_num: false,
         };
 
         let config = parse(cli).unwrap();
@@ -179,7 +181,7 @@ use super::*;
             count: true,
             ignore_case: true,
             color: false,
-            line_num: false
+            line_num: false,
         };
 
         let config = parse(cli).unwrap();
@@ -208,10 +210,7 @@ use super::*;
     fn test_parse_all_options() {
         let cli = Cli {
             pattern: "hello".into(),
-            path: vec![
-                PathBuf::from("src"),
-                PathBuf::from("tests"),
-            ],
+            path: vec![PathBuf::from("src"), PathBuf::from("tests")],
             print_config: true,
             count: true,
             ignore_case: false,
@@ -220,15 +219,12 @@ use super::*;
         };
 
         let config = parse(cli).unwrap();
-        
+
         assert_eq!(config.pattern, "hello");
 
         assert_eq!(
             config.path,
-            vec![
-                PathBuf::from("src"),
-                PathBuf::from("tests"),
-            ]
+            vec![PathBuf::from("src"), PathBuf::from("tests"),]
         );
 
         assert!(config.print_config);
@@ -238,5 +234,25 @@ use super::*;
 
         assert!(config.output_mode.color);
         assert!(!config.output_mode.line_num);
+    }
+
+    #[test]
+    fn test_no_argument() {
+        let result = Parse::build_from(vec![]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_help() {
+        let result = Parse::build_from(vec!["hello".into(), "-h".into()]).unwrap();
+
+        assert!(matches!(result, Parse::Special(Special::Help)))
+    }
+
+    #[test]
+    fn test_version() {
+        let result = Parse::build_from(vec!["-v".into()]).unwrap();
+
+        assert!(matches!(result, Parse::Special(Special::Version)));
     }
 }
