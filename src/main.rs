@@ -62,3 +62,18 @@ fn new_version() {
     let version = env!("CARGO_PKG_VERSION");
     println!("{version}");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn help_output() {
+        new_help();
+    }
+
+    #[test]
+    fn version_output() {
+        new_version();
+    }
+}
