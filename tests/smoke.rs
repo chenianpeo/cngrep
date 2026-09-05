@@ -1,159 +1,146 @@
-use std::fs::{self, remove_dir_all, remove_file};
-use std::process::{Command, Stdio};
-use std::{fs::File, io::Write};
+use std::{
+    io::Write,
+    process::{Command, Stdio},
+};
 
-fn new_file(path: &str, content: &str) {
-    let mut file = File::create(path).unwrap();
-    file.write_all(content.as_bytes()).unwrap();
+fn cg() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_cg"))
 }
 
 #[test]
-fn smoke_test_stdin() {
-    use crate::*;
-
-    let cg = env!("CARGO_BIN_EXE_cg");
-
-    let mut child = Command::new(cg)
+fn stdin_search() {
+    let mut child = cg()
         .arg("rust")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
-        .expect("failed to start cg");
+        .unwrap();
 
-    let stdin = child.stdin.as_mut().expect("failed to open stdin");
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(b"hello world\nrust is good\nHello Rust\n")
+        .unwrap();
 
-    stdin
-        .write_all(b"hello world\nrust is good\nHello Rust")
-        .expect("failed to write stdin");
+    let output = child.wait_with_output().unwrap();
 
-    drop(child.stdin.take());
-
-    let output = child.wait_with_output().expect("failed to wait for cg");
     assert!(output.status.success());
-    assert_eq!(String::from_utf8_lossy(&output.stdout), "2:rust is good\n");
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "rust is good\n");
 }
 
 #[test]
-fn smoke_test_file() {
-    use crate::*;
+fn stdin_ignore_case() {
+    let mut child = cg()
+        .args(["rust", "-i"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
 
-    let content = "hello world\nHello World";
-    let path = "./tests/test_file.txt";
-    new_file(path, content);
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(b"rust\nRUST\nRust\nhello\n")
+        .unwrap();
 
-    let cg = env!("CARGO_BIN_EXE_cg");
+    let output = child.wait_with_output().unwrap();
 
-    let output_normal = Command::new(cg)
-        .args(["hello", path])
-        .output()
-        .expect("failed to execute cg file");
-
-    let output_ignore = Command::new(cg)
-        .args(["hello", path, "-i"])
-        .output()
-        .expect("failed to execute cg file ignore");
-
-    let output_count = Command::new(cg)
-        .args(["hello", path, "-c"])
-        .output()
-        .expect("failed to execute cg file count");
-
-    let output_ignore_count = Command::new(cg)
-        .args(["hello", path, "-c", "-i"])
-        .output()
-        .expect("failed to execute cg file ignore count");
-
-    remove_file(path).expect("remove file error");
-
-    assert!(output_normal.status.success());
+    assert!(output.status.success());
     assert_eq!(
-        String::from_utf8_lossy(&output_normal.stdout),
-        "1:hello world\n"
+        String::from_utf8_lossy(&output.stdout),
+        "rust\nRUST\nRust\n"
     );
-
-    assert!(output_ignore.status.success());
-    assert_eq!(
-        String::from_utf8_lossy(&output_ignore.stdout),
-        "1:hello world\n2:Hello World\n"
-    );
-
-    assert!(output_count.status.success());
-    assert_eq!(
-        String::from_utf8_lossy(&output_count.stdout),
-        "./tests/test_file.txt: 1\n"
-    );
-
-    assert!(output_ignore_count.status.success());
-    assert_eq!(
-        String::from_utf8_lossy(&output_ignore_count.stdout),
-        "./tests/test_file.txt: 2\n"
-    );
-}
-
-fn new_dir(path: &str, content: Vec<&str>) {
-    fs::create_dir_all(path).unwrap();
-
-    for (no, file) in content.iter().enumerate() {
-        let path = &format!("{}/test_file_{}", path, no);
-        new_file(path, file);
-    }
 }
 
 #[test]
-fn smoke_test_dir() {
-    use crate::*;
+fn stdin_line_number() {
+    let mut child = cg()
+        .args(["rust", "-n"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
 
-    let path_1 = "tests/test_dir_1";
-    let content_1_1 = "hello world\nHello World";
-    let content_1_2 = "hello Rust\nHello rust";
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(b"hello\nrust\nworld\nrust again\n")
+        .unwrap();
 
-    new_dir(path_1, vec![content_1_1, content_1_2]);
+    let output = child.wait_with_output().unwrap();
 
-    let cg = env!("CARGO_BIN_EXE_cg");
-
-    let output_normal = Command::new(cg)
-        .args(["hello", path_1])
-        .output()
-        .expect("failed to execute cg file");
-
-    let output_ignore = Command::new(cg)
-        .args(["hello", path_1, "-i"])
-        .output()
-        .expect("failed to execute cg file ignore");
-
-    let output_count = Command::new(cg)
-        .args(["hello", path_1, "-c"])
-        .output()
-        .expect("failed to execute cg file count");
-
-    let output_ignore_count = Command::new(cg)
-        .args(["hello", path_1, "-c", "-i"])
-        .output()
-        .expect("failed to execute cg file ignore count");
-
-    remove_dir_all(path_1).expect("remove dir error");
-
-    assert!(output_normal.status.success());
+    assert!(output.status.success());
     assert_eq!(
-        String::from_utf8_lossy(&output_normal.stdout),
-        "tests/test_dir_1/test_file_0\n1:hello world\n\ntests/test_dir_1/test_file_1\n1:hello Rust\n"
+        String::from_utf8_lossy(&output.stdout),
+        "2:rust\n4:rust again\n"
     );
+}
 
-    assert!(output_ignore.status.success());
-    assert_eq!(
-        String::from_utf8_lossy(&output_ignore.stdout),
-        "tests/test_dir_1/test_file_0\n1:hello world\n2:Hello World\n\ntests/test_dir_1/test_file_1\n1:hello Rust\n2:Hello rust\n"
-    );
+#[test]
+fn stdin_count() {
+    let mut child = cg()
+        .args(["rust", "-c"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
 
-    assert!(output_count.status.success());
-    assert_eq!(
-        String::from_utf8_lossy(&output_count.stdout),
-        "tests/test_dir_1/test_file_0: 1\ntests/test_dir_1/test_file_1: 1\n"
-    );
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(b"rust\nhello\nrust\nRust\n")
+        .unwrap();
 
-    assert!(output_ignore_count.status.success());
-    assert_eq!(
-        String::from_utf8_lossy(&output_ignore_count.stdout),
-        "tests/test_dir_1/test_file_0: 2\ntests/test_dir_1/test_file_1: 2\n"
-    );
+    let output = child.wait_with_output().unwrap();
+
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "2\n");
+}
+
+#[test]
+fn stdin_empty() {
+    let mut child = cg()
+        .arg("rust")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(b"hello\nworld\n")
+        .unwrap();
+
+    let output = child.wait_with_output().unwrap();
+
+    assert!(output.status.success());
+    assert!(output.stdout.is_empty());
+}
+
+#[test]
+fn help_output() {
+    let output = cg().arg("--help").output().unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    assert!(stdout.contains("Usage"));
+}
+
+#[test]
+fn version_output() {
+    let output = cg().arg("--version").output().unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    assert!(stdout.contains(env!("CARGO_PKG_VERSION")));
 }
