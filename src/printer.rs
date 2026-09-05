@@ -1,4 +1,7 @@
-use std::{io, io::Write};
+use std::{
+    io::{self, Write},
+    process::ExitCode,
+};
 
 use crate::{
     common::Color,
@@ -12,23 +15,23 @@ pub struct OutputMode {
     pub line_num: bool,
 }
 
-pub fn output(result: &SearchResult, mode: &OutputMode) -> Result<(), Error> {
+pub fn output(result: &SearchResult, mode: &OutputMode) -> Result<ExitCode, Error> {
     let stdout = io::stdout();
     let mut writer = stdout.lock();
 
-    match result {
+    let exit_code = match result {
         SearchResult::Normal(normals) => render(normals, &mut writer, mode)?,
         SearchResult::Count(counts) => render_count(counts, &mut writer, mode)?,
-    }
+    };
 
-    Ok(())
+    Ok(exit_code)
 }
 
 pub fn render<W: Write>(
     normals: &[NormalResult],
     writer: &mut W,
     mode: &OutputMode,
-) -> Result<(), Error> {
+) -> Result<ExitCode, Error> {
     for (no, normal) in normals.iter().enumerate() {
         if let Some(path) = &normal.path
             && normals.len() != 1
@@ -66,14 +69,14 @@ pub fn render<W: Write>(
         }
     }
 
-    Ok(())
+    Ok(ExitCode::from(0))
 }
 
 pub fn render_count<W: Write>(
     counts: &[CountResult],
     writer: &mut W,
     mode: &OutputMode,
-) -> Result<(), Error> {
+) -> Result<ExitCode, Error> {
     for count in counts {
         let mut path = if let Some(path) = &count.path {
             format!("{}:", path.display())
@@ -88,5 +91,5 @@ pub fn render_count<W: Write>(
         writeln!(writer, "{}{}", path, count.number)?;
     }
 
-    Ok(())
+    Ok(ExitCode::from(0))
 }
