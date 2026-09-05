@@ -20,7 +20,7 @@ pub struct Config {
     pub path: Vec<PathBuf>,
     pub print_config: bool,
     pub output_mode: OutputMode,
-    pub new_match_mode: MatchMode,
+    pub match_mode: MatchMode,
 }
 
 impl Parse {
@@ -42,14 +42,12 @@ impl Parse {
             }
         }
 
-        let config = parse(&args)?;
+        let config = parse(Cli::parse())?;
         Ok(Parse::Ok(config))
     }
 }
 
-fn parse(_args: &[String]) -> Result<Config, Error> {
-    let cli = Cli::parse();
-
+fn parse(cli: Cli) -> Result<Config, Error> {
     let output_mode = OutputMode {
         color: cli.color,
         line_num: cli.line_num,
@@ -65,7 +63,7 @@ fn parse(_args: &[String]) -> Result<Config, Error> {
         path: cli.path,
         print_config: cli.print_config,
         output_mode,
-        new_match_mode: match_mode,
+        match_mode,
     };
     Ok(config)
 }
@@ -93,4 +91,152 @@ pub struct Cli {
 
     #[arg(short = 'n', long = "line-num")]
     pub line_num: bool,
+}
+
+/// test config parse
+/// later, need complete cli parse
+#[cfg(test)]
+mod cli_tests {
+    use std::vec;
+
+use super::*;
+
+    #[test]
+    fn test_parse_default() {
+        let cli = Cli {
+            pattern: "hello".into(),
+            path: vec![],
+            print_config: false,
+            count: false,
+            ignore_case: false,
+            color: false,
+            line_num: false
+        };
+
+        let config = parse(cli).unwrap();
+
+        assert_eq!(config.pattern, "hello");
+        assert!(config.path.is_empty());
+
+        assert!(!config.print_config);
+
+        assert!(!config.output_mode.color);
+        assert!(!config.output_mode.line_num);
+
+        assert!(!config.match_mode.count);
+        assert!(!config.match_mode.ignore_case);
+    }
+
+    #[test]
+    fn test_parse_pattern() {
+        let cli = Cli {
+            pattern: "hello".into(),
+            path: vec![],
+            print_config: false,
+            count: false,
+            ignore_case: false,
+            color: false,
+            line_num: false
+        };
+
+        let config = parse(cli).unwrap();
+        assert_eq!(config.pattern, "hello");
+    }
+
+    #[test]
+    fn test_parse_path() {
+        let cli = Cli {
+            pattern: "hello".into(),
+            path: vec![
+                PathBuf::from("src"),
+                PathBuf::from("tests"),
+                PathBuf::from("README.md"),
+            ],
+            print_config: false,
+            count: false,
+            ignore_case: false,
+            color: false,
+            line_num: false
+        };
+
+        let config = parse(cli).unwrap();
+        assert_eq!(
+            config.path,
+            vec![
+                PathBuf::from("src"),
+                PathBuf::from("tests"),
+                PathBuf::from("README.md"),
+            ]
+        )
+    }
+
+    #[test]
+    fn test_parse_match_mode() {
+        let cli = Cli {
+            pattern: "hello".into(),
+            path: vec![],
+            print_config: false,
+            count: true,
+            ignore_case: true,
+            color: false,
+            line_num: false
+        };
+
+        let config = parse(cli).unwrap();
+        assert!(config.match_mode.count);
+        assert!(config.match_mode.ignore_case);
+    }
+
+    #[test]
+    fn test_parse_output_mode() {
+        let cli = Cli {
+            pattern: "hello".into(),
+            path: vec![],
+            print_config: false,
+            count: false,
+            ignore_case: false,
+            color: true,
+            line_num: true,
+        };
+
+        let config = parse(cli).unwrap();
+        assert!(config.output_mode.color);
+        assert!(config.output_mode.line_num);
+    }
+
+    #[test]
+    fn test_parse_all_options() {
+        let cli = Cli {
+            pattern: "hello".into(),
+            path: vec![
+                PathBuf::from("src"),
+                PathBuf::from("tests"),
+            ],
+            print_config: true,
+            count: true,
+            ignore_case: false,
+            color: true,
+            line_num: false,
+        };
+
+        let config = parse(cli).unwrap();
+        
+        assert_eq!(config.pattern, "hello");
+
+        assert_eq!(
+            config.path,
+            vec![
+                PathBuf::from("src"),
+                PathBuf::from("tests"),
+            ]
+        );
+
+        assert!(config.print_config);
+
+        assert!(config.match_mode.count);
+        assert!(!config.match_mode.ignore_case);
+
+        assert!(config.output_mode.color);
+        assert!(!config.output_mode.line_num);
+    }
 }
